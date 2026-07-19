@@ -1,0 +1,15 @@
+# Reverse proxy + automatic HTTPS for the production stack.
+#
+# {$DOMAIN} is read from the environment (see docker-compose.prod.yml).
+# - A real domain (e.g. app.example.com) -> Caddy gets a free Let's Encrypt
+#   certificate automatically and renews it forever. No manual cert steps.
+# - A bare IP address (e.g. 20.30.40.50) -> Caddy serves plain HTTP only
+#   (Let's Encrypt cannot issue certificates for IP addresses). Fine for an
+#   initial smoke test before DNS is pointed at the server.
+{
+	email {$ACME_EMAIL}
+}
+
+{$DOMAIN} {
+	reverse_proxy frontend:80
+}

@@ -3,8 +3,9 @@
 #   docker compose -f docker-compose.prod.yml up -d --build
 #
 # Differences from the dev compose (docker-compose.yml):
-#   - Frontend is BUILT (vite build) and served as static files by nginx,
-#     which also proxies /api, /ws, /health to the backend. Port 80 only.
+#   - Frontend is BUILT (vite build) and served as static files by nginx.
+#   - Caddy sits in front of nginx on :80/:443 and gets a free, auto-renewing
+#     TLS certificate for DOMAIN (see Caddyfile). Nothing else is internet-facing.
 #   - Backend runs uvicorn WITHOUT --reload and with ENVIRONMENT=production
 #     (config validation refuses weak secrets at boot).
 #   - Qdrant/Redis/Postgres are NOT exposed on host ports — internal network only.
@@ -12,19 +13,38 @@
 #
 # Required environment (set in .env or the shell — never hardcoded here):
 #   POSTGRES_PASSWORD   database password (compose refuses to start without it)
+#   DOMAIN              your domain name, or the server's public IP for a
+#                       cert-less HTTP smoke test (compose refuses without it)
+#   ACME_EMAIL          optional — Let's Encrypt renewal contact
 #   JWT_SECRET, GEMINI_API_KEY / OPENAI_API_KEY, DEEPGRAM_API_KEY  via .env
-#
-# TLS: terminate HTTPS in front of the frontend (Caddy, Traefik, or a cloud
-# load balancer). This file deliberately keeps the stack listening on :80.
 
 services:
+  caddy:
+    image: caddy:2-alpine
+    container_name: ai_caddy
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN:?set DOMAIN to your domain name or server IP}
+      ACME_EMAIL: ${ACME_EMAIL:-}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - frontend
+    restart: always
+    networks:
+      - ai_net
+
   frontend:
     build:
       context: ./frontend
     image: ai-calling-assistant-web:latest
     container_name: ai_web
-    ports:
-      - "80:80"
+    expose:
+      - "80"
     depends_on:
       backend:
         condition: service_healthy
@@ -115,6 +135,27 @@ services:
       retries: 8
       start_period: 10s
 
+  # One-shot: `docker compose -f docker-compose.prod.yml --profile seed run --rm seed`
+  # Seeds demo data; safe to re-run (upserts, never wipes user uploads — see
+  # app/scripts/seed_demo_data.py). Not needed for a real deployment with its
+  # own knowledge base uploaded through the Knowledge Base page.
+  seed:
+    profiles:
+      - seed
+    image: ai-calling-assistant-api:latest
+    container_name: ai_seed
+    environment:
+      QDRANT_URL: http://qdrant:6333
+      HF_HOME: /home/appuser/.cache/huggingface
+    volumes:
+      - hf_model_cache:/home/appuser/.cache/huggingface
+    command: ["python", "-m", "app.scripts.seed_demo_data"]
+    depends_on:
+      qdrant:
+        condition: service_healthy
+    networks:
+      - ai_net
+
 networks:
   ai_net:
     driver: bridge
@@ -125,3 +166,5 @@ volumes:
   postgres_data:
   hf_model_cache:
   uploads:
+  caddy_data:
+  caddy_config:
