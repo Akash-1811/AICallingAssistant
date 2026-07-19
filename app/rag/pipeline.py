@@ -1,3 +1,9 @@
+"""
+The answer engine. For each customer turn: check cache, retrieve the most
+relevant knowledge, then one streamed LLM call that both classifies the turn
+(question / opener / objection / closing) and writes the reply. The INTENT tag
+line is stripped here — the rep only ever sees the spoken lines.
+"""
 from typing import Any, Callable, Dict, Iterator, List, Optional
 
 from app.core.config import settings

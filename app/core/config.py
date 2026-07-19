@@ -1,3 +1,7 @@
+"""
+Every tunable setting in one place, loaded from .env. If you are tempted to
+hardcode a number anywhere else, it probably belongs here with a comment.
+"""
 from typing import Optional
 
 from pydantic import Field, field_validator

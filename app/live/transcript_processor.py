@@ -1,3 +1,9 @@
+"""
+The main live loop: one iteration per finished customer sentence. Gates out
+noise ("okay", "thank you"), cancels stale suggestions when the topic moves on,
+and streams each worthwhile turn through the RAG pipeline to the rep's screen.
+Flow position: the bridge between transcription and answering.
+"""
 import asyncio
 import threading
 import time

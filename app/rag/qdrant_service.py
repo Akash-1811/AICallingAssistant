@@ -1,3 +1,7 @@
+"""
+Thin client for the Qdrant vector database — stores and searches the
+knowledge-base vectors. Flow position: called by the retriever.
+"""
 from typing import Optional
 
 from qdrant_client import QdrantClient

@@ -1,3 +1,8 @@
+"""
+Per-call memory. Stores what has been said so far (Redis or in-memory), decides
+which audio channel is the customer, and turns the customer's latest words into
+a clean question for retrieval. Flow position: after speech-to-text, before RAG.
+"""
 import json
 import re
 import uuid

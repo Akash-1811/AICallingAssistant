@@ -1,3 +1,6 @@
+"""
+One logger setup for the whole app — import get_logger(__name__) everywhere.
+"""
 import logging
 
 logging.basicConfig(

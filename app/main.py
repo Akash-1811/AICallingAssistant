@@ -1,11 +1,13 @@
+"""
+Application entry point: assembles the FastAPI app from routers, and on startup
+validates config, initializes the database, and warms up the RAG models.
+Run with: uvicorn app.main:app
+"""
 import asyncio
 from contextlib import asynccontextmanager
-from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import RedirectResponse
-from fastapi.staticfiles import StaticFiles
 
 from app.api.health import router as health_router
 import app.api.v1.auth  # noqa: F401 — register User model before create_all
@@ -22,9 +24,6 @@ from app.rag.answer_cache import close_answer_cache
 from app.live.conversation_manager import (
     conversation_manager,
 )
-
-_STATIC_DIR = Path(__file__).resolve().parent.parent / "static"
-
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -59,14 +58,8 @@ app.include_router(analytics_router, prefix="/api/v1")
 app.include_router(realtime_router, prefix="/ws")
 app.include_router(health_router, prefix="/health")
 
-if _STATIC_DIR.is_dir():
-    app.mount("/ui", StaticFiles(directory=str(_STATIC_DIR), html=True), name="ui")
-
-
 @app.get("/")
 def root():
-    if _STATIC_DIR.is_dir():
-        return RedirectResponse(url="/ui/index.html", status_code=307)
     return {"message": "AI Sales Assistant API", "docs": "/docs"}
 
 

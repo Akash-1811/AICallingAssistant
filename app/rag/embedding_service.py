@@ -1,3 +1,8 @@
+"""
+Turns text into meaning-vectors using a multilingual model, with a small cache.
+Hindi and English land in the same vector space, so no translation is needed.
+Flow position: first step of retrieval; also used at knowledge-base ingest.
+"""
 import hashlib
 from functools import lru_cache
 from typing import List

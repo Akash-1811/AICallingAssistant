@@ -1,3 +1,7 @@
+"""
+Shared shape of one transcribed speech span (text + speaker channel + timing).
+Used by every stage from Deepgram parsing to the database.
+"""
 from dataclasses import dataclass
 
 

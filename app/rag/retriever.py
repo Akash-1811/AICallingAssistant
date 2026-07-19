@@ -1,3 +1,8 @@
+"""
+Finds the knowledge-base passages most relevant to a customer turn:
+embed the query, vector-search Qdrant, blend in keyword overlap, then rerank
+with a cross-encoder. Returns the top handful of passages for the LLM prompt.
+"""
 import time
 from typing import Any, List, Optional
 

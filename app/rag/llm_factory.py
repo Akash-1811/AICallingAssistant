@@ -1,3 +1,7 @@
+"""
+Picks which LLM service to use (Gemini or OpenAI) from config. The live call
+path can use a different (faster) model than the REST path.
+"""
 from app.core.config import settings
 from app.core.logging import get_logger
 
