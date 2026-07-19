@@ -85,6 +85,17 @@ def read_prospect_signals(analysis: dict | None) -> dict[str, int]:
     }
 
 
+def conversion_band(conversion: int | None) -> str | None:
+    """Bucket a conversion likelihood: likely (>=65), possible (>=45), unlikely."""
+    if conversion is None:
+        return None
+    if conversion >= 65:
+        return "likely"
+    if conversion >= 45:
+        return "possible"
+    return "unlikely"
+
+
 def classify_call_outcome(
     interest: int | None,
     conversion: int | None,
@@ -139,6 +150,7 @@ def build_call_analytics_row(
         "outcome": classify_call_outcome(interest, conversion, signals)
         if analysis_row
         else "pending",
+        "conversion_band": conversion_band(conversion) if analysis_row else None,
         "rep_talk_pct": rep_talk_pct,
         "rep_questions": int(metrics.get("rep_questions_asked") or 0),
         "rep_wpm": metrics.get("rep_wpm"),
@@ -212,11 +224,9 @@ def build_analytics_summary(
             "at_risk_calls": sum(1 for call in analyzed if call["outcome"] == "at_risk"),
         },
         "conversion_bands": {
-            "likely": sum(1 for call in analyzed if (call["conversion_pct"] or 0) >= 65),
-            "possible": sum(
-                1 for call in analyzed if 45 <= (call["conversion_pct"] or -1) < 65
-            ),
-            "unlikely": sum(1 for call in analyzed if (call["conversion_pct"] or 0) < 45),
+            "likely": sum(1 for call in analyzed if call["conversion_band"] == "likely"),
+            "possible": sum(1 for call in analyzed if call["conversion_band"] == "possible"),
+            "unlikely": sum(1 for call in analyzed if call["conversion_band"] == "unlikely"),
         },
         "signal_balance": {
             "buying_signals_total": sum(call["buying_signals"] for call in analyzed),

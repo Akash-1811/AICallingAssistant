@@ -54,6 +54,9 @@ class Settings(BaseSettings):
     # Durable call archive + post-call analysis (PostgreSQL or SQLite)
     DATABASE_ENABLED: bool = True
     DATABASE_URL: str = "sqlite+aiosqlite:///./data/calls.db"
+    # Live-call audio recording (WAV, stereo int16 @ 16k).
+    # Stored on disk (persistent Docker volume) and referenced from the DB.
+    CALL_RECORDINGS_DIR: str = "data/uploads/recordings"
     ANALYSIS_LLM_PROVIDER: str | None = None
     ANALYSIS_GEMINI_MODEL: str = "gemini-3.5-flash"
     ANALYSIS_OPENAI_MODEL: str = "gpt-4o-mini"

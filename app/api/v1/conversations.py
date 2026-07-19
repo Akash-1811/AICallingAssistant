@@ -13,14 +13,17 @@ Example::
 from __future__ import annotations
 
 import asyncio
+from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import FileResponse
 from sqlalchemy import desc, select
 
 from app.analysis.analytics_summary import build_analytics_summary, range_start_time
 from app.analysis.post_call_analysis import refresh_call_metrics, schedule_post_call_analysis
 from app.api.v1.auth import get_current_user
+from app.core.config import settings
 from app.storage.call_store import (
     Conversation,
     ConversationAnalysis,
@@ -194,6 +197,26 @@ async def get_analysis(conversation_id: str):
             "error": analysis.error,
             "created_at": analysis.created_at.isoformat() if analysis.created_at else None,
         }
+
+
+@router.get("/{conversation_id}/audio")
+async def get_audio(conversation_id: str):
+    """Download the recorded call audio as a WAV file (if available)."""
+    ensure_database_enabled()
+    # Ensure the conversation exists so ids can't be probed.
+    async with get_db() as session:
+        conv = await session.get(Conversation, conversation_id)
+        if conv is None:
+            raise HTTPException(status_code=404, detail="Conversation not found")
+
+    path = Path(settings.CALL_RECORDINGS_DIR) / f"{conversation_id}.wav"
+    if not path.exists():
+        raise HTTPException(status_code=404, detail="Audio not available for this call yet")
+    return FileResponse(
+        str(path),
+        media_type="audio/wav",
+        filename=f"{conversation_id}.wav",
+    )
 
 
 @router.post("/{conversation_id}/reanalyze")

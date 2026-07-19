@@ -13,14 +13,17 @@ from app.analysis.post_call_analysis import schedule_post_call_analysis
 from app.api.v1.auth import decode_token
 from app.core.config import settings
 from app.core.logging import get_logger
+from app.live.audio_recording import WavRecordingWriter
 from app.live.call_recorder import (
     RecordingQueue,
+    attach_audio_recording,
     finalize_conversation,
     start_conversation,
 )
 from app.live.conversation_manager import conversation_manager
 from app.live.deepgram_service import DeepgramService
 from app.live.transcript_processor import TranscriptProcessor
+from app.storage.call_store import database_enabled
 
 logger = get_logger(__name__)
 
@@ -105,6 +108,14 @@ async def realtime_assistant(websocket: WebSocket):
     outbound_queue = RecordingQueue(client_queue, session_id)
 
     processor = TranscriptProcessor()
+    audio_recorder: WavRecordingWriter | None = None
+    if database_enabled():
+        audio_recorder = WavRecordingWriter(session_id)
+        try:
+            await audio_recorder.start()
+        except Exception as e:
+            logger.warning("Audio recorder disabled (conversation=%s): %s", session_id, e)
+            audio_recorder = None
 
     async def receive_audio():
         """Binary frames: interleaved stereo PCM chunks. Text frames are ignored."""
@@ -118,6 +129,8 @@ async def realtime_assistant(websocket: WebSocket):
                     continue
                 try:
                     audio_queue.put_nowait(data)
+                    if audio_recorder is not None:
+                        audio_recorder.enqueue(data)
                 except asyncio.QueueFull:
                     logger.warning(
                         "Audio queue full (session=%s), dropping chunk",
@@ -170,6 +183,16 @@ async def realtime_assistant(websocket: WebSocket):
         await asyncio.gather(*tasks, return_exceptions=True)
         # Persist any events still queued before analysis reads the conversation.
         await outbound_queue.flush_and_close()
+        if audio_recorder is not None:
+            try:
+                await audio_recorder.close()
+                await attach_audio_recording(
+                    session_id,
+                    wav_path=str(audio_recorder.path),
+                    bytes_written=audio_recorder.data_size_bytes,
+                )
+            except Exception as e:
+                logger.warning("Audio recorder close failed (conversation=%s): %s", session_id, e)
         should_analyze = await finalize_conversation(session_id)
         if should_analyze:
             asyncio.create_task(schedule_post_call_analysis(session_id))

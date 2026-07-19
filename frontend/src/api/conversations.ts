@@ -89,6 +89,7 @@ export type AnalyticsCallRow = {
   buying_signals: number;
   objections: number;
   outcome: "qualified" | "follow_up" | "at_risk" | "nurture" | "pending";
+  conversion_band: "likely" | "possible" | "unlikely" | null;
   rep_talk_pct: number | null;
   rep_questions: number;
   rep_wpm: number | null;

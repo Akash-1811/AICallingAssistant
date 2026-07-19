@@ -1,12 +1,15 @@
 /**
  * Landing page: the owner's 10-second answer to "how are my sales calls going,
  * and what needs my attention?". Every number comes from the analytics summary
- * endpoint — measured from real calls or AI-assessed with evidence. Nothing is
- * invented, and the copy is written for non-technical users.
+ * endpoint — measured from real calls or AI-assessed with evidence.
+ *
+ * Every count is a drill-down: clicking a bar, pill, or band opens a modal
+ * listing exactly those calls, and each call links to its full review page.
  */
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
+  authHeaders,
   formatDuration,
   formatTimestamp,
   getAnalyticsSummary,
@@ -60,11 +63,96 @@ function toneClass(tone: "good" | "warn" | "risk" | "neutral"): string {
   return styles.pillNeutral;
 }
 
+type ModalState = { title: string; subtitle: string; rows: AnalyticsCallRow[] } | null;
+
+/** Modal listing a set of calls; every row links to that call's full review. */
+function CallListModal({
+  modal,
+  onClose,
+}: {
+  modal: NonNullable<ModalState>;
+  onClose: () => void;
+}) {
+  const closeRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    closeRef.current?.focus();
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [onClose]);
+
+  return (
+    <div className={styles.modalBackdrop} role="presentation" onClick={onClose}>
+      <div
+        className={styles.modal}
+        role="dialog"
+        aria-modal="true"
+        aria-label={modal.title}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className={styles.modalHead}>
+          <div>
+            <h2 className={styles.modalTitle}>{modal.title}</h2>
+            <p className={styles.modalSub}>{modal.subtitle}</p>
+          </div>
+          <button ref={closeRef} type="button" className={styles.modalClose} onClick={onClose}>
+            ✕
+          </button>
+        </div>
+        {modal.rows.length > 0 ? (
+          <ul className={styles.modalList}>
+            {modal.rows.map((row) => {
+              const outcome = OUTCOME_LABELS[row.outcome];
+              return (
+                <li key={row.id}>
+                  <Link to={`/conversations/${row.id}`} className={styles.modalRow}>
+                    <div className={styles.modalRowMain}>
+                      <span className={styles.callId}>{row.id.slice(0, 8)}</span>
+                      <span className={styles.modalWhen}>{formatTimestamp(row.started_at)}</span>
+                    </div>
+                    <span className={`${styles.pill} ${toneClass(outcome.tone)}`}>
+                      {outcome.text}
+                    </span>
+                    <span className={styles.modalMeta}>
+                      {row.interest_score != null ? `${row.interest_score}% interest` : "—"}
+                    </span>
+                    <span className={styles.modalMeta}>{formatDuration(row.duration_sec)}</span>
+                    <span className={styles.modalChevron} aria-hidden="true">
+                      ›
+                    </span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        ) : (
+          <p className={styles.modalEmpty}>No calls in this group yet.</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function DashboardPage() {
   const [range, setRange] = useState<Range>("30d");
   const [summary, setSummary] = useState<AnalyticsSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [modal, setModal] = useState<ModalState>(null);
+
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioUrlRef = useRef<string | null>(null);
+  const [playingId, setPlayingId] = useState<string | null>(null);
+  const [paused, setPaused] = useState(false);
+  const [audioBusyId, setAudioBusyId] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -87,17 +175,139 @@ export function DashboardPage() {
     };
   }, [range]);
 
-  const recentCalls = useMemo(() => (summary?.calls ?? []).slice(0, 6), [summary]);
+  const calls = useMemo(() => summary?.calls ?? [], [summary]);
+  const callsById = useMemo(() => new Map(calls.map((c) => [c.id, c])), [calls]);
+  const recentCalls = useMemo(() => calls.slice(0, 6), [calls]);
   const actionCalls = useMemo(
-    () =>
-      (summary?.calls ?? [])
-        .filter((c) => c.outcome === "follow_up" || c.outcome === "at_risk")
-        .slice(0, 5),
-    [summary]
+    () => calls.filter((c) => c.outcome === "follow_up" || c.outcome === "at_risk").slice(0, 5),
+    [calls]
   );
   const maxVolume = useMemo(
     () => Math.max(...(summary?.weekly_volume ?? []).map((b) => b.count), 1),
     [summary]
+  );
+
+  const stopAudio = useCallback(() => {
+    if (audioRef.current) {
+      try {
+        audioRef.current.pause();
+      } catch {
+        /* ignore */
+      }
+      audioRef.current.src = "";
+      audioRef.current = null;
+    }
+    if (audioUrlRef.current) {
+      URL.revokeObjectURL(audioUrlRef.current);
+      audioUrlRef.current = null;
+    }
+    setPlayingId(null);
+    setPaused(false);
+    setAudioBusyId(null);
+  }, []);
+
+  useEffect(() => {
+    return () => stopAudio();
+  }, [stopAudio]);
+
+  const togglePlay = useCallback(
+    async (conversationId: string) => {
+      // Toggle play/pause for the currently loaded call.
+      if (playingId === conversationId && audioRef.current) {
+        if (audioRef.current.paused) {
+          await audioRef.current.play().catch(() => {});
+          setPaused(false);
+        } else {
+          audioRef.current.pause();
+          setPaused(true);
+        }
+        return;
+      }
+
+      stopAudio();
+      setAudioBusyId(conversationId);
+      try {
+        const res = await fetch(`/api/v1/conversations/${conversationId}/audio`, {
+          headers: authHeaders(),
+        });
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          const detail = (body as { detail?: string }).detail;
+          throw new Error(detail || res.statusText || "Audio unavailable");
+        }
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        audioUrlRef.current = url;
+        const audio = new Audio(url);
+        audioRef.current = audio;
+        audio.onended = () => stopAudio();
+        audio.onpause = () => setPaused(true);
+        audio.onplay = () => setPaused(false);
+        await audio.play();
+        setPlayingId(conversationId);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Audio unavailable");
+        stopAudio();
+      } finally {
+        setAudioBusyId(null);
+      }
+    },
+    [authHeaders, playingId, stopAudio]
+  );
+
+  const closeModal = useCallback(() => setModal(null), []);
+
+  const openOutcomeModal = useCallback(
+    (outcome: AnalyticsCallRow["outcome"], title: string) => {
+      setModal({
+        title,
+        subtitle: "Click a call to open its full review",
+        rows: calls.filter((c) => c.outcome === outcome),
+      });
+    },
+    [calls]
+  );
+
+  const openBandModal = useCallback(
+    (band: "likely" | "possible" | "unlikely", title: string) => {
+      setModal({
+        title,
+        subtitle: "Click a call to open its full review",
+        rows: calls.filter((c) => c.conversion_band === band),
+      });
+    },
+    [calls]
+  );
+
+  const openBucketModal = useCallback(
+    (label: string, callIds: string[]) => {
+      setModal({
+        title: `Calls in ${label}`,
+        subtitle: "Click a call to open its full review",
+        rows: callIds
+          .map((id) => callsById.get(id))
+          .filter((c): c is AnalyticsCallRow => Boolean(c)),
+      });
+    },
+    [callsById]
+  );
+
+  const openSignalModal = useCallback(
+    (kind: "positive" | "concerns") => {
+      const analyzed = calls.filter((c) => c.outcome !== "pending");
+      const sorted = [...analyzed].sort((a, b) =>
+        kind === "positive" ? b.buying_signals - a.buying_signals : b.objections - a.objections
+      );
+      setModal({
+        title: kind === "positive" ? "Calls with positive signs" : "Calls where concerns came up",
+        subtitle:
+          kind === "positive"
+            ? "Sorted by how many positive signs the customer gave"
+            : "Sorted by how many concerns the customer raised",
+        rows: sorted,
+      });
+    },
+    [calls]
   );
 
   const hasCalls = (summary?.total_conversations ?? 0) > 0;
@@ -161,12 +371,19 @@ export function DashboardPage() {
               <div className={styles.heroTop}>
                 <div>
                   <p className={styles.darkLabel}>Where your leads stand</p>
-                  <p className={styles.heroValue}>
-                    {pipeline?.qualified_calls ?? "—"}
-                    <span className={styles.heroUnit}> strong leads</span>
-                  </p>
+                  <button
+                    type="button"
+                    className={styles.heroValueBtn}
+                    onClick={() => openOutcomeModal("qualified", "Strong leads")}
+                  >
+                    <span className={styles.heroValue}>
+                      {pipeline?.qualified_calls ?? "—"}
+                      <span className={styles.heroUnit}> strong leads</span>
+                    </span>
+                  </button>
                   <p className={styles.heroBody}>
-                    Counted from what each customer actually said on the call.
+                    Counted from what each customer actually said on the call. Click any number to
+                    see the calls behind it.
                   </p>
                 </div>
                 <div className={styles.heroSideStats}>
@@ -186,6 +403,29 @@ export function DashboardPage() {
                     <span className={styles.heroStatLabel}>Chance of closing</span>
                     <span className={styles.heroMeter}>
                       <span style={{ width: `${summary?.avg_conversion_pct ?? 0}%` }} />
+                    </span>
+                    <span className={styles.bandChips}>
+                      <button
+                        type="button"
+                        className={styles.bandChip}
+                        onClick={() => openBandModal("likely", "Calls likely to close")}
+                      >
+                        {summary?.conversion_bands.likely ?? 0} high
+                      </button>
+                      <button
+                        type="button"
+                        className={styles.bandChip}
+                        onClick={() => openBandModal("possible", "Calls that might close")}
+                      >
+                        {summary?.conversion_bands.possible ?? 0} medium
+                      </button>
+                      <button
+                        type="button"
+                        className={styles.bandChip}
+                        onClick={() => openBandModal("unlikely", "Calls unlikely to close")}
+                      >
+                        {summary?.conversion_bands.unlikely ?? 0} low
+                      </button>
                     </span>
                   </div>
                 </div>
@@ -208,22 +448,38 @@ export function DashboardPage() {
                   </div>
                 ) : null}
                 <div className={styles.pillRow}>
-                  <span className={`${styles.pill} ${styles.pillOnDark}`}>
+                  <button
+                    type="button"
+                    className={`${styles.pill} ${styles.pillOnDark} ${styles.pillBtn}`}
+                    onClick={() => openOutcomeModal("qualified", "Strong leads")}
+                  >
                     <i className={styles.dotGood} /> <strong>{pipeline?.qualified_calls ?? 0}</strong>{" "}
                     strong
-                  </span>
-                  <span className={`${styles.pill} ${styles.pillOnDark}`}>
+                  </button>
+                  <button
+                    type="button"
+                    className={`${styles.pill} ${styles.pillOnDark} ${styles.pillBtn}`}
+                    onClick={() => openOutcomeModal("follow_up", "Calls that need a follow-up")}
+                  >
                     <i className={styles.dotWarn} /> <strong>{pipeline?.follow_up_calls ?? 0}</strong>{" "}
                     need a follow-up
-                  </span>
-                  <span className={`${styles.pill} ${styles.pillOnDark}`}>
+                  </button>
+                  <button
+                    type="button"
+                    className={`${styles.pill} ${styles.pillOnDark} ${styles.pillBtn}`}
+                    onClick={() => openOutcomeModal("at_risk", "Calls that may slip away")}
+                  >
                     <i className={styles.dotRisk} /> <strong>{pipeline?.at_risk_calls ?? 0}</strong>{" "}
                     may slip away
-                  </span>
-                  <span className={`${styles.pill} ${styles.pillOnDark}`}>
+                  </button>
+                  <button
+                    type="button"
+                    className={`${styles.pill} ${styles.pillOnDark} ${styles.pillBtn}`}
+                    onClick={() => openOutcomeModal("nurture", "Customers still deciding")}
+                  >
                     <i className={styles.dotNeutral} /> <strong>{stillDeciding}</strong> still
                     deciding
-                  </span>
+                  </button>
                 </div>
               </div>
             </section>
@@ -259,39 +515,53 @@ export function DashboardPage() {
               <p className={styles.cardLabel}>What customers told you</p>
               <ul className={styles.signalList}>
                 <li>
-                  <div className={styles.signalTop}>
-                    <span>
-                      <i className={styles.dotGood} /> Positive signs
-                    </span>
-                    <span className={styles.signalValue}>{signals?.buying_signals_total ?? 0}</span>
-                  </div>
-                  <div className={styles.signalTrack}>
-                    <div
-                      className={`${styles.signalFill} ${styles.signalFillGood}`}
-                      style={{
-                        width: `${((signals?.buying_signals_total ?? 0) / signalMax) * 100}%`,
-                      }}
-                    />
-                  </div>
+                  <button
+                    type="button"
+                    className={styles.signalBtn}
+                    onClick={() => openSignalModal("positive")}
+                  >
+                    <div className={styles.signalTop}>
+                      <span>
+                        <i className={styles.dotGood} /> Positive signs
+                      </span>
+                      <span className={styles.signalValue}>
+                        {signals?.buying_signals_total ?? 0}
+                      </span>
+                    </div>
+                    <div className={styles.signalTrack}>
+                      <div
+                        className={`${styles.signalFill} ${styles.signalFillGood}`}
+                        style={{
+                          width: `${((signals?.buying_signals_total ?? 0) / signalMax) * 100}%`,
+                        }}
+                      />
+                    </div>
+                  </button>
                 </li>
                 <li>
-                  <div className={styles.signalTop}>
-                    <span>
-                      <i className={styles.dotRisk} /> Concerns raised
-                    </span>
-                    <span className={styles.signalValue}>{signals?.objections_total ?? 0}</span>
-                  </div>
-                  <div className={styles.signalTrack}>
-                    <div
-                      className={`${styles.signalFill} ${styles.signalFillRisk}`}
-                      style={{ width: `${((signals?.objections_total ?? 0) / signalMax) * 100}%` }}
-                    />
-                  </div>
+                  <button
+                    type="button"
+                    className={styles.signalBtn}
+                    onClick={() => openSignalModal("concerns")}
+                  >
+                    <div className={styles.signalTop}>
+                      <span>
+                        <i className={styles.dotRisk} /> Concerns raised
+                      </span>
+                      <span className={styles.signalValue}>{signals?.objections_total ?? 0}</span>
+                    </div>
+                    <div className={styles.signalTrack}>
+                      <div
+                        className={`${styles.signalFill} ${styles.signalFillRisk}`}
+                        style={{ width: `${((signals?.objections_total ?? 0) / signalMax) * 100}%` }}
+                      />
+                    </div>
+                  </button>
                 </li>
               </ul>
               <p className={styles.cardFoot}>
                 Things customers said that show interest — like asking about price or a site visit —
-                versus doubts they raised.
+                versus doubts they raised. Click either to see which calls.
               </p>
             </section>
 
@@ -299,7 +569,9 @@ export function DashboardPage() {
               <div className={styles.chartHead}>
                 <div>
                   <h2 className={styles.chartTitle}>Calls over time</h2>
-                  <p className={styles.chartSub}>Each bar is one {range === "7d" ? "day" : "week"}</p>
+                  <p className={styles.chartSub}>
+                    Each bar is one {range === "7d" ? "day" : "week"} — click a bar to see its calls
+                  </p>
                 </div>
               </div>
               <div className={styles.plotArea}>
@@ -319,10 +591,14 @@ export function DashboardPage() {
                               {bucket.count} {bucket.count === 1 ? "call" : "calls"}
                             </span>
                           ) : null}
-                          <div
+                          <button
+                            type="button"
                             className={`${styles.plotBar} ${isPeak ? styles.plotBarHi : ""}`}
                             style={{ height: `${Math.max((bucket.count / maxVolume) * 100, 2)}%` }}
-                            title={`${bucket.label}: ${bucket.count} ${bucket.count === 1 ? "call" : "calls"}`}
+                            title={`${bucket.label}: ${bucket.count} ${bucket.count === 1 ? "call" : "calls"} — click to view`}
+                            disabled={bucket.count === 0}
+                            aria-label={`${bucket.label}: ${bucket.count} calls — view details`}
+                            onClick={() => openBucketModal(bucket.label, bucket.call_ids)}
                           />
                         </div>
                         <span className={styles.plotDay}>{bucket.label}</span>
@@ -455,13 +731,37 @@ export function DashboardPage() {
                   <tbody>
                     {recentCalls.map((row) => {
                       const outcome = OUTCOME_LABELS[row.outcome];
+                      const isActive = playingId === row.id;
+                      const isBusy = audioBusyId === row.id;
                       return (
                         <tr key={row.id}>
                           <td>
-                            <Link to={`/conversations/${row.id}`} className={styles.callId}>
-                              {row.id.slice(0, 8)}
-                            </Link>
-                            <p className={styles.callWhen}>{formatTimestamp(row.started_at)}</p>
+                            <div className={styles.callCell}>
+                              <button
+                                type="button"
+                                className={`${styles.playBtn} ${isActive ? styles.playBtnActive : ""}`}
+                                aria-label={
+                                  isBusy
+                                    ? "Loading audio"
+                                    : isActive && !paused
+                                      ? "Pause audio"
+                                      : "Play audio"
+                                }
+                                title={isActive && !paused ? "Pause" : "Play"}
+                                disabled={isBusy}
+                                onClick={() => void togglePlay(row.id)}
+                              >
+                                <span className={styles.playIcon} aria-hidden="true">
+                                  ▶
+                                </span>
+                              </button>
+                              <div>
+                                <Link to={`/conversations/${row.id}`} className={styles.callId}>
+                                  {row.id.slice(0, 8)}
+                                </Link>
+                                <p className={styles.callWhen}>{formatTimestamp(row.started_at)}</p>
+                              </div>
+                            </div>
                           </td>
                           <td>
                             <span className={`${styles.pill} ${toneClass(outcome.tone)}`}>
@@ -505,6 +805,8 @@ export function DashboardPage() {
           </div>
         )}
       </div>
+
+      {modal ? <CallListModal modal={modal} onClose={closeModal} /> : null}
     </div>
   );
 }

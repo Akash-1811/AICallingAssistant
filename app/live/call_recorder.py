@@ -143,6 +143,28 @@ async def start_conversation(conversation_id: str, *, audio_channels: int = 1) -
         await session.commit()
 
 
+async def attach_audio_recording(
+    conversation_id: str,
+    *,
+    wav_path: str,
+    bytes_written: int,
+) -> None:
+    """Persist audio recording metadata on the conversation row."""
+    if not database_enabled():
+        return
+    async with get_db() as session:
+        row = await session.get(Conversation, conversation_id)
+        if row is None:
+            return
+        row.extra = {
+            **(row.extra or {}),
+            "audio_wav_path": wav_path,
+            "audio_bytes": int(bytes_written),
+            "audio_mime": "audio/wav",
+        }
+        await session.commit()
+
+
 async def handle_ws_event(conversation_id: str, event: dict[str, Any]) -> None:
     """
     Route one outbound WebSocket event to the appropriate persistence handler.
