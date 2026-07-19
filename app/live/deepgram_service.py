@@ -37,10 +37,9 @@ def _speaker_channel(data: dict) -> int:
     idx = data.get("channel_index")
     if isinstance(idx, list) and idx:
         idx = idx[0]
-    try:
+    if isinstance(idx, int | float) or (isinstance(idx, str) and idx.isdigit()):
         return int(idx)
-    except (TypeError, ValueError):
-        return 0
+    return 0
 
 
 def _first_alternative(data: dict) -> dict:
@@ -61,11 +60,11 @@ def _segment_from_results(data: dict) -> TranscriptSegment | None:
     start_ms = end_ms = None
     words = [w for w in (alt.get("words") or []) if isinstance(w, dict)]
     if words:
-        try:
-            start_ms = int(float(words[0].get("start")) * 1000)
-            end_ms = int(float(words[-1].get("end")) * 1000)
-        except (TypeError, ValueError):
-            start_ms = end_ms = None
+        first_start = words[0].get("start")
+        last_end = words[-1].get("end")
+        if isinstance(first_start, int | float) and isinstance(last_end, int | float):
+            start_ms = int(first_start * 1000)
+            end_ms = int(last_end * 1000)
 
     return TranscriptSegment(
         text=text,

@@ -22,3 +22,6 @@ frontend/dist/
 .tmp_dg2/
 .idea/
 .vscode/
+
+# pytest temp artifacts (VS Code test runner)
+pytest-cache-files-*/

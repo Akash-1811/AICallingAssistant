@@ -2,6 +2,13 @@
 # AI Calling Assistant — API image (FastAPI + sentence-transformers + RAG)
 # Single worker: in-process embedding/rerank models + WebSockets do not scale
 # horizontally without sticky sessions / shared model servers.
+#
+# Build notes:
+# - torch is installed CPU-only FIRST. Otherwise `sentence-transformers` drags in
+#   ~2.5 GB of NVIDIA CUDA wheels the container can never use — that alone was
+#   ~20 minutes of build time and a source of corrupted-download failures.
+# - Pip's download cache persists across builds via a BuildKit cache mount, so
+#   rebuilding after a requirements change re-downloads only what changed.
 # -----------------------------------------------------------------------------
 
 FROM python:3.11-slim-bookworm AS runtime
@@ -12,7 +19,6 @@ LABEL org.opencontainers.image.title="ai-calling-assistant-api" \
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
-    PIP_NO_CACHE_DIR=1 \
     PYTHONPATH=/app \
     HOME=/home/appuser \
     HF_HOME=/home/appuser/.cache/huggingface \
@@ -35,15 +41,17 @@ RUN apt-get update \
 # Layer cache: deps before app code
 COPY requirements.txt .
 
-# Install deps then drop compiler toolchain to shrink attack surface & image size
-RUN pip install --no-cache-dir -r requirements.txt \
+# CPU-only torch first (see build notes), then the rest; drop the compiler
+# toolchain afterwards to shrink attack surface & image size.
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install torch --index-url https://download.pytorch.org/whl/cpu \
+    && pip install -r requirements.txt \
     && apt-get purge -y build-essential \
     && apt-get autoremove -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Application (respect .dockerignore)
 COPY app ./app
-COPY static ./static
 
 RUN useradd --create-home --uid 1000 appuser \
     && mkdir -p /home/appuser/.cache/huggingface \
@@ -53,7 +61,7 @@ USER appuser
 
 EXPOSE 8000
 
-# First request may load MiniLM + cross-encoder — allow warm-up
+# First request may load the embedding + reranker models — allow warm-up
 HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=3 \
     CMD curl -fsS http://127.0.0.1:8000/health/live || exit 1
 

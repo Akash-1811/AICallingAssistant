@@ -87,6 +87,8 @@ class Settings(BaseSettings):
     # the English KB (shared vector space) — no translation call in the hot path.
     # Changing this model requires reindexing Qdrant (python -m app.scripts.ingest_data).
     EMBEDDING_MODEL: str = "paraphrase-multilingual-MiniLM-L12-v2"
+    # Vector width of EMBEDDING_MODEL — must change together with it (and reindex).
+    EMBEDDING_DIM: int = 384
     # LRU cache for embedding vectors — saves 20–80 ms per repeated phrase in a session
     EMBEDDING_CACHE_SIZE: int = 512
 

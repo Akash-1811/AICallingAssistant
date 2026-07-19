@@ -45,7 +45,7 @@ def _wait_for_qdrant(client: QdrantClient) -> None:
 
 def _recreate_collection(client: QdrantClient) -> None:
     name = settings.QDRANT_COLLECTION
-    cfg = VectorParams(size=384, distance=Distance.COSINE)
+    cfg = VectorParams(size=settings.EMBEDDING_DIM, distance=Distance.COSINE)
     try:
         existing = client.get_collections().collections
         if any(c.name == name for c in existing):

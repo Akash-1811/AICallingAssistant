@@ -129,7 +129,7 @@ class KnowledgeService:
             return
         client.create_collection(
             collection_name=name,
-            vectors_config=VectorParams(size=384, distance=Distance.COSINE),
+            vectors_config=VectorParams(size=settings.EMBEDDING_DIM, distance=Distance.COSINE),
         )
 
     def remove_source_vectors(self, client: QdrantClient, source_id: str) -> None:

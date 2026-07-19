@@ -35,3 +35,10 @@ Thumbs.db
 
 # Agent / transcripts
 agent-transcripts
+
+# Not needed in images
+data
+tests
+docs
+pytest-cache-files-*
+.github
