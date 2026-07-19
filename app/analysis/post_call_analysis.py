@@ -27,12 +27,12 @@ from openai import OpenAI
 from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import desc, select
 
-from app.call_store import Conversation, ConversationAnalysis, database_enabled, get_db, next_analysis_version
+from app.storage.call_store import Conversation, ConversationAnalysis, database_enabled, get_db, next_analysis_version
 from app.core.config import settings
-from app.core.loggin import get_logger
-from app.services.call_recorder import load_conversation_bundle, set_conversation_status
-from app.services.gemini_service import get_gemini_client
-from app.services.speech_metrics import (
+from app.core.logging import get_logger
+from app.live.call_recorder import load_conversation_bundle, set_conversation_status
+from app.rag.gemini_service import get_gemini_client
+from app.analysis.speech_metrics import (
     build_call_glance,
     build_engagement_curves,
     compute_speech_metrics,

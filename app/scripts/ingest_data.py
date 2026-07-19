@@ -19,7 +19,7 @@ from qdrant_client import QdrantClient
 from qdrant_client.models import Distance, PointStruct, VectorParams
 
 from app.core.config import settings
-from app.services.embedding_service import EmbeddingService
+from app.rag.embedding_service import EmbeddingService
 
 _DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 _DEFAULT_FILE = "raymond_realty.json"

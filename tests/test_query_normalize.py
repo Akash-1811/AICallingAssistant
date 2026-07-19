@@ -1,7 +1,7 @@
 """query_normalize: ASR cleanup, language hint, duplicate detection."""
 
 from app.core.config import settings
-from app.modules.rag.query_normalize import (
+from app.rag.query_cleanup import (
     dominant_language_hint,
     normalize_live_query,
     queries_are_near_duplicate,

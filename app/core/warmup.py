@@ -12,8 +12,8 @@ import time
 from typing import Optional
 
 from app.core.config import settings
-from app.core.loggin import get_logger
-from app.modules.rag.pipeline import get_rag_pipeline
+from app.core.logging import get_logger
+from app.rag.pipeline import get_rag_pipeline
 
 logger = get_logger(__name__)
 

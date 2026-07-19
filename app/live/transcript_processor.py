@@ -5,19 +5,19 @@ from itertools import count
 from typing import Any, List
 
 from app.core.config import settings
-from app.core.loggin import get_logger
-from app.modules.conversation_intelligence.conversation_manager import (
+from app.core.logging import get_logger
+from app.live.conversation_manager import (
     conversation_manager,
 )
-from app.modules.rag.intent_heuristics import looks_like_closing_or_acknowledgement
-from app.modules.rag.pipeline import get_rag_pipeline
-from app.modules.rag.query_normalize import (
+from app.live.turn_gate import looks_like_closing_or_acknowledgement
+from app.rag.pipeline import get_rag_pipeline
+from app.rag.query_cleanup import (
     dominant_language_hint,
     normalize_live_query,
     queries_are_near_duplicate,
 )
-from app.services.call_recorder import OutboundQueue
-from app.services.transcript_types import TranscriptSegment
+from app.live.call_recorder import OutboundQueue
+from app.live.transcript_types import TranscriptSegment
 
 logger = get_logger(__name__)
 

@@ -11,16 +11,16 @@ from typing import Any, Dict, Iterator, List, Optional
 from openai import OpenAI
 
 from app.core.config import settings
-from app.core.loggin import get_logger
+from app.core.logging import get_logger
 from app.core.telemetry import get_tracer
-from app.modules.rag.models import RetrievedChunk
-from app.modules.rag.prompts import (
+from app.rag.models import RetrievedChunk
+from app.rag.prompts import (
     build_grounded_answer_prompt,
     build_live_suggestion_prompt,
     build_no_context_prompt,
     empty_retrieval_message,
 )
-from app.services.gemini_service import format_numbered_context
+from app.rag.gemini_service import format_numbered_context
 
 logger = get_logger(__name__)
 

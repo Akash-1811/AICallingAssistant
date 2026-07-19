@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.modules.rag.intent_heuristics import looks_like_closing_or_acknowledgement
+from app.live.turn_gate import looks_like_closing_or_acknowledgement
 
 
 @pytest.mark.parametrize(
@@ -42,7 +42,7 @@ class TestExtractIntent:
     """The LLM tags each live turn; parsing must be forgiving but never invalid."""
 
     def test_accepts_all_valid_tags_with_or_without_label(self) -> None:
-        from app.modules.rag.pipeline import extract_intent
+        from app.rag.pipeline import extract_intent
 
         assert extract_intent(" question") == "question"
         assert extract_intent("INTENT: opener") == "opener"
@@ -50,7 +50,7 @@ class TestExtractIntent:
         assert extract_intent("  closing  ") == "closing"
 
     def test_malformed_tags_fall_back_to_question(self) -> None:
-        from app.modules.rag.pipeline import extract_intent
+        from app.rag.pipeline import extract_intent
 
         assert extract_intent("") == "question"
         assert extract_intent("something odd") == "question"

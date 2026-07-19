@@ -6,7 +6,7 @@ model receives *only the lead's* recent utterances as `turns`. Each scenario is
 a slice of a plausible sales / discovery call.
 """
 
-from app.modules.conversation_intelligence.conversation_manager import (
+from app.live.conversation_manager import (
     _extract_best_query,
 )
 
@@ -98,10 +98,10 @@ class TestConversationManagerLeadOnlyScenarios:
         """Once channel 1 (customer) speaks, only its lines inform retrieval."""
         import asyncio
 
-        from app.modules.conversation_intelligence.conversation_manager import (
+        from app.live.conversation_manager import (
             ConversationManager,
         )
-        from app.services.transcript_types import TranscriptSegment
+        from app.live.transcript_types import TranscriptSegment
 
         async def scenario():
             cm = ConversationManager()
@@ -127,10 +127,10 @@ class TestConversationManagerLeadOnlyScenarios:
         in the retrieval query."""
         import asyncio
 
-        from app.modules.conversation_intelligence.conversation_manager import (
+        from app.live.conversation_manager import (
             ConversationManager,
         )
-        from app.services.transcript_types import TranscriptSegment
+        from app.live.transcript_types import TranscriptSegment
 
         async def scenario():
             cm = ConversationManager()
@@ -160,10 +160,10 @@ class TestConversationManagerLeadOnlyScenarios:
         """No tab share (demo / phone on speaker) → the lone mic channel is the lead."""
         import asyncio
 
-        from app.modules.conversation_intelligence.conversation_manager import (
+        from app.live.conversation_manager import (
             ConversationManager,
         )
-        from app.services.transcript_types import TranscriptSegment
+        from app.live.transcript_types import TranscriptSegment
 
         async def scenario():
             cm = ConversationManager()

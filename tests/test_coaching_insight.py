@@ -1,6 +1,6 @@
 """Tests for dashboard coaching insight generation."""
 
-from app.services.post_call_analysis import TopicItem, build_coaching_insight
+from app.analysis.post_call_analysis import TopicItem, build_coaching_insight
 
 
 def test_coaching_insight_suggests_pricing_when_undercovered():

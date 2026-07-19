@@ -1,6 +1,6 @@
 """Unit tests for BHK intent extraction and semantic cache compatibility."""
 
-from app.modules.rag.query_intent import config_slots, semantic_cache_compatible
+from app.rag.query_cleanup import config_slots, semantic_cache_compatible
 
 
 class TestConfigSlots:

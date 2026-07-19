@@ -4,8 +4,8 @@ import uuid
 from typing import Any, Dict, List, Optional, Tuple
 
 from app.core.config import settings
-from app.core.loggin import get_logger
-from app.services.transcript_types import TranscriptSegment
+from app.core.logging import get_logger
+from app.live.transcript_types import TranscriptSegment
 
 logger = get_logger(__name__)
 

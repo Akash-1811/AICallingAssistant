@@ -6,7 +6,7 @@ from fastapi import APIRouter
 from qdrant_client import QdrantClient
 
 from app.core.config import settings
-from app.core.loggin import get_logger
+from app.core.logging import get_logger
 
 logger = get_logger(__name__)
 

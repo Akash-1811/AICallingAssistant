@@ -6,11 +6,9 @@ No extra LLM calls — keeps latency low.
 from __future__ import annotations
 
 import re
-from typing import Optional
+from typing import FrozenSet, Optional
 
 from app.core.config import settings
-from app.modules.cache.answer_cache import normalize_query
-from app.modules.rag.query_intent import config_slots
 
 # ASR / dictation fixes before retrieval (add more as needed).
 _TYPO_REPLACEMENTS: tuple[tuple[re.Pattern[str], str], ...] = (
@@ -118,3 +116,60 @@ def queries_are_near_duplicate(new_query: str, previous_query: Optional[str]) ->
 
     j = _token_jaccard(na, nb)
     return j >= settings.QUERY_DEDUP_JACCARD_THRESHOLD
+
+# Normalized "flat type" mentions (spoken + written variants).
+_BHK_PATTERNS: tuple[tuple[str, str], ...] = (
+    (r"\b1\s*bhk\b", "1bhk"),
+    (r"\bone\s+bhk\b", "1bhk"),
+    (r"\b2\s*bhk\b", "2bhk"),
+    (r"\btwo\s+bhk\b", "2bhk"),
+    (r"\b3\s*bhk\b", "3bhk"),
+    (r"\bthree\s+bhk\b", "3bhk"),
+    (r"\b4\s*bhk\b", "4bhk"),
+    (r"\bfour\s+bhk\b", "4bhk"),
+)
+
+
+def config_slots(text: str) -> FrozenSet[str]:
+    """Extract BHK configuration mentions from arbitrary query text."""
+    s = text.strip().lower()
+    s = re.sub(r"\s+", " ", s)
+    if not s:
+        return frozenset()
+    found: set[str] = set()
+    for pattern, tag in _BHK_PATTERNS:
+        if re.search(pattern, s, re.IGNORECASE):
+            found.add(tag)
+    return frozenset(found)
+
+
+def semantic_cache_compatible(new_norm: str, cached_norm: Optional[str]) -> bool:
+    """
+    Whether a semantic cache entry keyed by `cached_norm` may serve `new_norm`.
+
+    If both queries mention specific BHK types, the sets must match exactly.
+    If only one side mentions BHK, we allow match (generic ↔ specific paraphrase).
+
+    Payloads without `query_norm` (legacy) only participate in semantic hits when the
+    new query has no BHK slots—otherwise we miss and avoid 2BHK/3BHK cache bleed.
+    """
+    a = config_slots(new_norm)
+    if not cached_norm:
+        return len(a) == 0
+    b = config_slots(cached_norm)
+    if not a and not b:
+        return True
+    if not a or not b:
+        return True
+    return a == b
+
+_MAX_QUERY_LEN = 4000
+
+
+def normalize_query(q: str) -> str:
+    """Lowercase + collapse whitespace — the canonical cache/dedup key form."""
+    s = q.strip().lower()
+    s = re.sub(r"\s+", " ", s)
+    if len(s) > _MAX_QUERY_LEN:
+        s = s[:_MAX_QUERY_LEN]
+    return s

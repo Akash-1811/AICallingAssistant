@@ -1,6 +1,6 @@
 """Multichannel Results parsing: physical channel = speaker (0 = mic/rep, 1 = tab/customer)."""
 
-from app.services.deepgram_service import _segment_from_results, _speaker_channel
+from app.live.deepgram_service import _segment_from_results, _speaker_channel
 
 
 def _results(channel_index, transcript, words=None):

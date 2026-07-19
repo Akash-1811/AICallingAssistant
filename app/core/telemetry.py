@@ -11,7 +11,7 @@ from contextlib import contextmanager
 from typing import Any, Iterator
 
 from app.core.config import settings
-from app.core.loggin import get_logger
+from app.core.logging import get_logger
 
 logger = get_logger(__name__)
 

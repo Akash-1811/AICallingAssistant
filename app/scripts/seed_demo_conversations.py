@@ -19,7 +19,7 @@ from typing import Any
 from sqlalchemy import delete, select
 
 from app.api.v1.auth import User
-from app.call_store import (
+from app.storage.call_store import (
     Conversation,
     ConversationAnalysis,
     SuggestionRow,
@@ -29,8 +29,8 @@ from app.call_store import (
 )
 from app.scripts.demo_analysis import build_demo_analysis
 from app.scripts.demo_transcripts import SCENARIO_IDS, build_scenarios
-from app.services.post_call_analysis import run_post_call_analysis
-from app.services.speech_metrics import compute_speech_metrics
+from app.analysis.post_call_analysis import run_post_call_analysis
+from app.analysis.speech_metrics import compute_speech_metrics
 
 LEAD_SPEAKER_ID = 1
 EMPTY_CONVERSATION_ID = "f0ed52fc-f3e4-4112-a6dd-8c7818cb0005"

@@ -4,11 +4,11 @@ from typing import Any, List, Optional
 from sentence_transformers import CrossEncoder
 
 from app.core.config import settings
-from app.core.loggin import get_logger
+from app.core.logging import get_logger
 from app.core.telemetry import get_tracer
-from app.modules.rag.models import RetrievedChunk
-from app.services.embedding_service import EmbeddingService
-from app.services.qdrant_service import QdrantService
+from app.rag.models import RetrievedChunk
+from app.rag.embedding_service import EmbeddingService
+from app.rag.qdrant_service import QdrantService
 
 logger = get_logger(__name__)
 

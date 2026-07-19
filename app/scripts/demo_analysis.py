@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from app.services.post_call_analysis import (
+from app.analysis.post_call_analysis import (
     PostCallAnalysisResult,
     apply_computed_metrics,
     enrich_call_timeline,

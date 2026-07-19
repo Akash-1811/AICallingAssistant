@@ -20,26 +20,17 @@ from collections import OrderedDict, deque
 from typing import Any, Dict, List, Optional, Tuple
 
 from app.core.config import settings
-from app.core.loggin import get_logger
-from app.modules.rag.query_intent import semantic_cache_compatible
-from app.services.embedding_service import EmbeddingService
+from app.core.logging import get_logger
+from app.rag.query_cleanup import normalize_query, semantic_cache_compatible
+from app.rag.embedding_service import EmbeddingService
 
 logger = get_logger(__name__)
 
-_MAX_QUERY_LEN = 4000
 # After sort by similarity, only check top-N (each may hit Redis); limits worst-case latency.
 _SEMANTIC_MAX_CANDIDATES = 8
 
 _answer_cache_singleton: Optional["AnswerCache"] = None
 _answer_cache_init_lock = threading.Lock()
-
-
-def normalize_query(q: str) -> str:
-    s = q.strip().lower()
-    s = re.sub(r"\s+", " ", s)
-    if len(s) > _MAX_QUERY_LEN:
-        s = s[:_MAX_QUERY_LEN]
-    return s
 
 
 def fingerprint(norm: str) -> str:

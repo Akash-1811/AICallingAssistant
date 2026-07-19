@@ -2,20 +2,20 @@ import asyncio
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
-from app.core.loggin import get_logger
+from app.core.logging import get_logger
 from app.core.security import websocket_api_key_ok
 from app.api.v1.auth import websocket_jwt_ok
-from app.modules.conversation_intelligence.conversation_manager import (
+from app.live.conversation_manager import (
     conversation_manager,
 )
-from app.services.call_recorder import (
+from app.live.call_recorder import (
     RecordingQueue,
     finalize_conversation,
     start_conversation,
 )
-from app.services.deepgram_service import DeepgramService
-from app.services.post_call_analysis import schedule_post_call_analysis
-from app.services.transcript_processor import TranscriptProcessor
+from app.live.deepgram_service import DeepgramService
+from app.analysis.post_call_analysis import schedule_post_call_analysis
+from app.live.transcript_processor import TranscriptProcessor
 
 logger = get_logger(__name__)
 

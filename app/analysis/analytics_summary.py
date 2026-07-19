@@ -6,7 +6,7 @@ from collections.abc import Sequence
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
-from app.call_store import Conversation, ConversationAnalysis
+from app.storage.call_store import Conversation, ConversationAnalysis
 
 
 def range_start_time(range_key: str) -> datetime:

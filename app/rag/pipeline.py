@@ -1,14 +1,14 @@
 from typing import Any, Callable, Dict, Iterator, List, Optional
 
 from app.core.config import settings
-from app.core.loggin import get_logger
+from app.core.logging import get_logger
 from app.core.telemetry import get_tracer
-from app.modules.cache.answer_cache import get_answer_cache
-from app.modules.rag.models import RetrievedChunk
-from app.modules.rag.prompts import VALID_LIVE_INTENTS
-from app.modules.rag.retriever import RAGRetriever
-from app.modules.rag.query_normalize import build_retrieval_query
-from app.services.llm_factory import get_llm_service
+from app.rag.answer_cache import get_answer_cache
+from app.rag.models import RetrievedChunk
+from app.rag.prompts import VALID_LIVE_INTENTS
+from app.rag.retriever import RAGRetriever
+from app.rag.query_cleanup import build_retrieval_query
+from app.rag.llm_factory import get_llm_service
 
 logger = get_logger(__name__)
 

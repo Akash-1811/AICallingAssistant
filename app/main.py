@@ -17,9 +17,9 @@ from app.api.websocket.realtime import router as realtime_router
 from app.core.config import settings, validate_production_settings
 from app.core.telemetry import setup_telemetry
 from app.core.warmup import warm_rag_stack_sync
-from app.call_store import close_database, init_database
-from app.modules.cache.answer_cache import close_answer_cache
-from app.modules.conversation_intelligence.conversation_manager import (
+from app.storage.call_store import close_database, init_database
+from app.rag.answer_cache import close_answer_cache
+from app.live.conversation_manager import (
     conversation_manager,
 )
 

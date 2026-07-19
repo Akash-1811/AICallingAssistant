@@ -1,6 +1,6 @@
 """Tests for deterministic post-call speech metrics."""
 
-from app.services.speech_metrics import compute_speech_metrics
+from app.analysis.speech_metrics import compute_speech_metrics
 
 
 def test_talk_ratio_from_timestamps():
@@ -124,7 +124,7 @@ def test_prospect_questions_and_call_glance():
     assert metrics["prospect_questions_asked"] == 2
     assert metrics["total_questions_asked"] == 3
 
-    from app.services.speech_metrics import build_call_glance, downsample_bucket_series
+    from app.analysis.speech_metrics import build_call_glance, downsample_bucket_series
 
     glance = build_call_glance(metrics)
     assert glance["total_duration_sec"] == 12
@@ -138,7 +138,7 @@ def test_prospect_questions_and_call_glance():
 
 def test_engagement_curves_are_measured_only():
     """Curves must come from transcript measurements — no synthetic sentiment/interest."""
-    from app.services.speech_metrics import build_engagement_curves, compute_speech_metrics
+    from app.analysis.speech_metrics import build_engagement_curves, compute_speech_metrics
 
     segments = [
         {"speaker_id": 0, "role": "rep", "text": "What is your budget for the flat?",
@@ -158,7 +158,7 @@ def test_engagement_curves_are_measured_only():
 
 def test_question_detection_is_multilingual():
     """Hindi questions (Devanagari or romanized, with or without '?') must count."""
-    from app.services.speech_metrics import is_question_sentence
+    from app.analysis.speech_metrics import is_question_sentence
 
     assert is_question_sentence("What is your budget?") is True
     assert is_question_sentence("क्या आपके पास 3BHK है")

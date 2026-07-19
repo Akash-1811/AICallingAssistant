@@ -15,7 +15,7 @@ import json
 import sys
 from pathlib import Path
 
-from app.modules.rag.retriever import RAGRetriever
+from app.rag.retriever import RAGRetriever
 
 
 def _data_dir() -> Path:

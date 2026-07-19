@@ -23,14 +23,14 @@ from typing import Any, Optional, Protocol
 
 from sqlalchemy import select
 
-from app.call_store import (
+from app.storage.call_store import (
     Conversation,
     SuggestionRow,
     TranscriptSegmentRow,
     database_enabled,
     get_db,
 )
-from app.core.loggin import get_logger
+from app.core.logging import get_logger
 
 logger = get_logger(__name__)
 

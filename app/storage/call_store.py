@@ -24,7 +24,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 from app.core.config import settings
-from app.core.loggin import get_logger
+from app.core.logging import get_logger
 
 logger = get_logger(__name__)
 

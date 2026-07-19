@@ -15,14 +15,14 @@ from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import delete, select
 
-from app.call_store import (
+from app.storage.call_store import (
     Conversation,
     SuggestionRow,
     TranscriptSegmentRow,
     get_db,
     init_database,
 )
-from app.services.post_call_analysis import run_post_call_analysis
+from app.analysis.post_call_analysis import run_post_call_analysis
 
 DEFAULT_CONVERSATION_ID = "7d593e0a-aa11-4151-b42f-4258468098c3"
 LEAD_SPEAKER_ID = 1

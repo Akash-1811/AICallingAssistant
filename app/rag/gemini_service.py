@@ -16,10 +16,10 @@ from google.genai import errors as genai_errors
 from google.genai import types as genai_types
 
 from app.core.config import settings
-from app.core.loggin import get_logger
+from app.core.logging import get_logger
 from app.core.telemetry import get_tracer
-from app.modules.rag.models import RetrievedChunk
-from app.modules.rag.prompts import (
+from app.rag.models import RetrievedChunk
+from app.rag.prompts import (
     build_grounded_answer_prompt,
     build_live_suggestion_prompt,
     build_no_context_prompt,

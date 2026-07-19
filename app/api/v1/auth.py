@@ -16,7 +16,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from starlette.status import HTTP_401_UNAUTHORIZED
 from starlette.websockets import WebSocket
 
-from app.call_store import Base, get_db
+from app.storage.call_store import Base, get_db
 from app.core.config import settings
 
 router = APIRouter(prefix="/auth", tags=["auth"])

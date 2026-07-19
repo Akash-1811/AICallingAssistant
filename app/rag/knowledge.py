@@ -23,10 +23,10 @@ from qdrant_client.models import (
 )
 from sqlalchemy import delete
 
-from app.call_store import KnowledgeSource, get_db
+from app.storage.call_store import KnowledgeSource, get_db
 from app.core.config import settings
-from app.core.loggin import get_logger
-from app.services.embedding_service import EmbeddingService
+from app.core.logging import get_logger
+from app.rag.embedding_service import EmbeddingService
 
 logger = get_logger(__name__)
 

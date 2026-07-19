@@ -14,9 +14,9 @@ from typing import Any, List
 from deepgram import AsyncDeepgramClient
 
 from app.core.config import settings
-from app.core.loggin import get_logger
-from app.services.call_recorder import OutboundQueue
-from app.services.transcript_types import TranscriptSegment
+from app.core.logging import get_logger
+from app.live.call_recorder import OutboundQueue
+from app.live.transcript_types import TranscriptSegment
 
 logger = get_logger(__name__)
 
