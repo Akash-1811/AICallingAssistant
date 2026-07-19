@@ -107,7 +107,7 @@ rest of this guide immediately — Caddy will pick up the domain whenever DNS re
 SSH into the VM (replace with your key path and the VM's IP):
 
 ```bash
-ssh -i /path/to/your-key.pem azureuser@<VM_PUBLIC_IP>
+ssh -i /"C:\Users\Akash Yadav\Downloads\AICallingAssistant_key.pem" azureuser@<40.81.243.12>
 ```
 
 Install Docker Engine + the Compose plugin (official Docker script — the same
@@ -172,8 +172,10 @@ JWT_SECRET=paste-a-freshly-generated-64-char-hex-string-here
 POSTGRES_PASSWORD=paste-a-strong-random-password-here
 
 # --- Domain / TLS ---
-# Your real domain if you set up DNS in step 3, otherwise the VM's public IP
-# (IP-only means Caddy serves plain HTTP — see Caddyfile comments)
+# Your real domain if you set up DNS in step 3 (Caddy will do automatic HTTPS).
+# If you're using the VM public IP (smoke test), include the scheme so Caddy does
+# NOT attempt HTTPS redirects:
+#   DOMAIN=http://<VM_PUBLIC_IP>
 DOMAIN=app.yourdomain.com
 ACME_EMAIL=you@yourdomain.com
 

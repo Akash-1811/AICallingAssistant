@@ -1,15 +1,19 @@
-# Reverse proxy + automatic HTTPS for the production stack.
+# Reverse proxy for the production stack.
 #
-# {$DOMAIN} is read from the environment (see docker-compose.prod.yml).
-# - A real domain (e.g. app.example.com) -> Caddy gets a free Let's Encrypt
-#   certificate automatically and renews it forever. No manual cert steps.
-# - A bare IP address (e.g. 20.30.40.50) -> Caddy serves plain HTTP only
-#   (Let's Encrypt cannot issue certificates for IP addresses). Fine for an
-#   initial smoke test before DNS is pointed at the server.
-{
-	email {$ACME_EMAIL}
-}
+# {$DOMAIN} is read from the environment (see `docker-compose.prod.yml`).
+# - Use a real domain (e.g. app.example.com) to get automatic HTTPS.
+# - For an IP smoke test, set `DOMAIN` to `http://<PUBLIC_IP>` so Caddy does NOT
+#   attempt HTTPS redirects (Let's Encrypt can't issue certs for bare IPs).
 
 {$DOMAIN} {
+	# Route API + docs directly to FastAPI (avoids extra nginx hop).
+	@api path /api/* /health* /docs* /openapi.json
+	reverse_proxy @api backend:8000
+
+	# Live calls use WebSockets at /ws/realtime.
+	@ws path /ws/*
+	reverse_proxy @ws backend:8000
+
+	# Everything else is the SPA (nginx static files).
 	reverse_proxy frontend:80
 }
