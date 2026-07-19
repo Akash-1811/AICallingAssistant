@@ -10,6 +10,7 @@ import uuid
 from datetime import UTC, datetime
 from pathlib import Path
 
+from docx import Document as DocxDocument
 from pypdf import PdfReader
 from qdrant_client import QdrantClient
 from qdrant_client.models import (
@@ -34,7 +35,7 @@ logger = get_logger(__name__)
 class KnowledgeService:
     UPLOAD_DIR = Path("data/uploads")
     CHUNK_SIZE = 700
-    ALLOWED = frozenset({".txt", ".csv", ".pdf", ".json"})
+    ALLOWED = frozenset({".txt", ".csv", ".pdf", ".json", ".docx"})
     MAX_BYTES = 15 * 1024 * 1024
 
     def parse_json_records(self, path: Path) -> list[dict] | None:
@@ -83,6 +84,16 @@ class KnowledgeService:
                 (page.extract_text() or "")
                 for page in PdfReader(str(path)).pages
             )
+        if suffix == ".docx":
+            doc = DocxDocument(str(path))
+            parts = [p.text.strip() for p in doc.paragraphs if p.text.strip()]
+            # Word pricing sheets often live in tables — flatten each row.
+            for table in doc.tables:
+                for row in table.rows:
+                    cells = [c.text.strip() for c in row.cells if c.text.strip()]
+                    if cells:
+                        parts.append(" | ".join(cells))
+            return "\n".join(parts)
         if suffix == ".json":
             data = json.loads(path.read_text(encoding="utf-8", errors="ignore"))
             if isinstance(data, list):

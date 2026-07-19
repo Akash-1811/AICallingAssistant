@@ -118,7 +118,7 @@ export function KnowledgeBasePage() {
             ref={fileInputRef}
             type="file"
             className={styles.kbFileInput}
-            accept=".pdf,.txt,.csv,.json,text/plain,text/csv,application/pdf,application/json"
+            accept=".pdf,.docx,.txt,.csv,.json,text/plain,text/csv,application/pdf,application/json,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
             multiple
             tabIndex={-1}
             aria-hidden="true"
@@ -133,7 +133,7 @@ export function KnowledgeBasePage() {
             </svg>
           </div>
           <h2 className={styles.kbDropTitle}>Add documents</h2>
-          <p className={styles.kbDropHint}>Drop PDF, TXT, CSV, or JSON files here (max 15 MB each).</p>
+          <p className={styles.kbDropHint}>Drop PDF, Word (DOCX), TXT, CSV, or JSON files here (max 15 MB each).</p>
           <button
             type="button"
             className={styles.kbBtnPrimary}
