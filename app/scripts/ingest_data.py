@@ -1,8 +1,15 @@
 """
-Ingest `app/data/raymond_realty.json` into Qdrant (collection from settings).
+Seed the Qdrant knowledge base with `app/data/raymond_realty.json`.
+
+SAFE BY DEFAULT: seed points are upserted alongside anything users uploaded
+through the Knowledge Base page — uploads are never touched.
+
+--recreate wipes the ENTIRE collection first (including user uploads!). Only
+needed after changing EMBEDDING_MODEL / EMBEDDING_DIM; afterwards, re-embed
+user uploads with the "Re-Sync All" button on the Knowledge Base page.
 
 Local (Qdrant on localhost:6333):
-  python -m app.scripts.ingest_data
+  python -m app.scripts.ingest_data [filename] [--recreate]
 
 Docker (Qdrant in compose):
   docker compose --profile ingest run --rm ingest
@@ -10,8 +17,8 @@ Docker (Qdrant in compose):
 
 from __future__ import annotations
 
+import argparse
 import json
-import sys
 import time
 from pathlib import Path
 
@@ -43,19 +50,21 @@ def _wait_for_qdrant(client: QdrantClient) -> None:
     ) from last
 
 
-def _recreate_collection(client: QdrantClient) -> None:
+def _ensure_collection(client: QdrantClient, *, recreate: bool) -> None:
     name = settings.QDRANT_COLLECTION
-    cfg = VectorParams(size=settings.EMBEDDING_DIM, distance=Distance.COSINE)
-    try:
-        existing = client.get_collections().collections
-        if any(c.name == name for c in existing):
-            client.delete_collection(collection_name=name)
-    except Exception:
-        pass
-    client.create_collection(collection_name=name, vectors_config=cfg)
+    exists = any(c.name == name for c in client.get_collections().collections)
+    if exists and recreate:
+        print(f"--recreate: deleting collection `{name}` (user uploads included)")
+        client.delete_collection(collection_name=name)
+        exists = False
+    if not exists:
+        client.create_collection(
+            collection_name=name,
+            vectors_config=VectorParams(size=settings.EMBEDDING_DIM, distance=Distance.COSINE),
+        )
 
 
-def ingest(data_filename: str = _DEFAULT_FILE) -> None:
+def ingest(data_filename: str = _DEFAULT_FILE, *, recreate: bool = False) -> None:
     data_path = _DATA_DIR / data_filename
     if not data_path.is_file():
         raise FileNotFoundError(
@@ -78,7 +87,7 @@ def ingest(data_filename: str = _DEFAULT_FILE) -> None:
     # Connect to Qdrant before loading the embedding model (fail fast, correct URL).
     client = QdrantClient(settings.QDRANT_URL)
     _wait_for_qdrant(client)
-    _recreate_collection(client)
+    _ensure_collection(client, recreate=recreate)
 
     embedder = EmbeddingService()
 
@@ -110,8 +119,16 @@ def ingest(data_filename: str = _DEFAULT_FILE) -> None:
 
 
 def main() -> None:
-    filename = sys.argv[1] if len(sys.argv) > 1 else _DEFAULT_FILE
-    ingest(filename)
+    parser = argparse.ArgumentParser(description="Seed the Qdrant knowledge base")
+    parser.add_argument("filename", nargs="?", default=_DEFAULT_FILE)
+    parser.add_argument(
+        "--recreate",
+        action="store_true",
+        help="Wipe the entire collection first — DELETES user uploads. "
+        "Only for embedding-model changes; re-sync uploads from the UI afterwards.",
+    )
+    args = parser.parse_args()
+    ingest(args.filename, recreate=args.recreate)
 
 
 if __name__ == "__main__":
