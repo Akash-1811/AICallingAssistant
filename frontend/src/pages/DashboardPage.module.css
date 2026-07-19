@@ -1,0 +1,731 @@
+.dashMain {
+  gap: 0.75rem;
+  padding-bottom: 2rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* ─── Page header ───────────────────────────────────────────────────────────── */
+.pageHeader {
+  flex-shrink: 0;
+}
+
+.pageEyebrow {
+  font-size: 0.58rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--text-faint);
+  margin: 0 0 0.35rem;
+}
+
+.pageTitle {
+  font-family: var(--font);
+  font-size: clamp(1.35rem, 2.6vw, 1.95rem);
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 1.18;
+  margin: 0;
+}
+
+.pageTitleDark {
+  color: var(--text);
+}
+
+.pageTitleAccent {
+  color: var(--accent);
+}
+
+/* ─── KPI grid ──────────────────────────────────────────────────────────────── */
+.kpiGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.92fr) minmax(0, 0.92fr);
+  grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 0.7rem;
+  min-height: 200px;
+  flex-shrink: 0;
+}
+
+.capacityCard {
+  grid-column: 1;
+  grid-row: 1 / span 2;
+  background: var(--surface);
+  border: 1px solid var(--sep);
+  border-radius: var(--r-lg);
+  padding: 1rem 1.1rem;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+}
+
+.capacityBadge {
+  align-self: flex-start;
+  font-size: 0.56rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--teal-text);
+  background: var(--teal-bg);
+  padding: 0.26rem 0.5rem;
+  border-radius: 999px;
+  margin-bottom: 0.65rem;
+}
+
+.capacityValue {
+  font-size: clamp(1.85rem, 3.5vw, 2.35rem);
+  font-weight: 700;
+  letter-spacing: -0.028em;
+  line-height: 1;
+  margin: 0 0 0.45rem;
+  color: var(--text);
+}
+
+.capacityBody {
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--text-sub);
+  margin: 0 0 auto;
+  max-width: 26rem;
+  padding-bottom: 0.85rem;
+}
+
+.capacityFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--sep);
+}
+
+.capacityFooterLabel {
+  font-size: 0.56rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-faint);
+}
+
+.nodeDots {
+  display: flex;
+  gap: 5px;
+}
+
+.nodeDots span {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--teal);
+  box-shadow: 0 0 0 2px var(--teal-bg);
+}
+
+.miniCard {
+  background: var(--surface);
+  border: 1px solid var(--sep);
+  border-radius: var(--r-lg);
+  padding: 0.9rem 1rem;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+}
+
+.sentimentCard {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.orangeCard {
+  grid-column: 2;
+  grid-row: 2;
+  background: var(--accent);
+  border-color: transparent;
+  box-shadow: 0 6px 20px rgba(235, 87, 0, 0.28);
+}
+
+.leadCard {
+  grid-column: 3;
+  grid-row: 1 / span 2;
+  justify-content: flex-start;
+  gap: 0.35rem;
+}
+
+.miniLabel {
+  font-size: 0.54rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-faint);
+  margin: 0 0 0.35rem;
+}
+
+.orangeCard .miniLabelOrange {
+  font-size: 0.54rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(255, 255, 255, 0.88);
+  margin: 0 0 0.3rem;
+}
+
+.miniEmphasis {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--green-text);
+  margin: 0 0 0.45rem;
+}
+
+.sentimentBar {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  overflow: hidden;
+  margin-bottom: 0.4rem;
+}
+
+.sentimentFill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--teal) 0%, #40916c 100%);
+}
+
+.miniFoot {
+  font-size: 0.7rem;
+  color: var(--text-sub);
+  margin: 0;
+}
+
+.sessionsValue {
+  font-size: 1.65rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #fff;
+  margin: 0 0 0.65rem;
+  line-height: 1;
+}
+
+.reportBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: auto;
+  padding: 0.5rem 0.65rem;
+  border-radius: var(--r);
+  background: rgba(255, 255, 255, 0.95);
+  color: var(--accent);
+  font-family: var(--font);
+  font-size: 0.6rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  text-decoration: none;
+  transition:
+    background var(--t) var(--ease),
+    color var(--t) var(--ease);
+}
+
+.reportBtn:hover {
+  background: #fff;
+  color: var(--accent-hover);
+}
+
+.convValue {
+  font-size: 1.45rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 0 0 0.25rem;
+  color: var(--text);
+  line-height: 1;
+}
+
+.convTrend {
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--teal-text);
+  margin: 0 0 0.5rem;
+}
+
+.leadSpark {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 36px;
+  margin-top: 0.15rem;
+}
+
+.leadSparkBar {
+  flex: 1;
+  min-width: 0;
+  border-radius: 2px 2px 0 0;
+  background: linear-gradient(180deg, var(--accent-dim) 0%, rgba(235, 87, 0, 0.35) 100%);
+  max-width: 20px;
+}
+
+.leadFoot {
+  font-size: 0.68rem;
+  line-height: 1.4;
+  color: var(--text-faint);
+  margin: 0.35rem 0 0;
+}
+
+/* ─── Chart row (two equal cards, full width) ───────────────────────────────── */
+.chartRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 0.75rem;
+  width: 100%;
+  flex-shrink: 0;
+}
+
+.chartSection {
+  background: var(--surface);
+  border: 1px solid var(--sep);
+  border-radius: var(--r-lg);
+  padding: 0.95rem 1.05rem 1.05rem;
+  box-shadow: var(--shadow-sm);
+  min-width: 0;
+  width: 100%;
+}
+
+.insightCard {
+  background: var(--surface);
+  border: 1px solid var(--sep);
+  border-radius: var(--r-lg);
+  padding: 0.95rem 1.05rem 1.05rem;
+  box-shadow: var(--shadow-sm);
+  min-width: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.insightHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.85rem;
+}
+
+.insightTitle {
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  margin: 0 0 0.2rem;
+  color: var(--text);
+}
+
+.insightSub {
+  font-size: 0.68rem;
+  color: var(--text-faint);
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.insightBadge {
+  flex-shrink: 0;
+  font-size: 0.54rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 0.25rem 0.5rem;
+  border-radius: 999px;
+  background: var(--teal-bg);
+  color: var(--teal-text);
+}
+
+.insightHero {
+  font-size: clamp(1.5rem, 2.5vw, 1.85rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  margin: 0 0 0.25rem;
+  color: var(--text);
+  line-height: 1.1;
+}
+
+.insightHeroUnit {
+  font-size: 0.55em;
+  font-weight: 600;
+  color: var(--text-sub);
+  letter-spacing: 0.04em;
+  margin-left: 0.15rem;
+}
+
+.insightCaption {
+  font-size: 0.74rem;
+  color: var(--text-sub);
+  margin: 0 0 1rem;
+}
+
+.insightList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-top: auto;
+}
+
+.insightList li {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.72rem;
+}
+
+.insightRowTop {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.insightLabel {
+  color: var(--text-sub);
+  font-weight: 500;
+}
+
+.insightTrack {
+  display: block;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  overflow: hidden;
+  width: 100%;
+}
+
+.insightFill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent) 0%, #d05000 100%);
+}
+
+.insightPct {
+  font-weight: 600;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+.chartHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.chartTitle {
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  margin: 0 0 0.2rem;
+  color: var(--text);
+}
+
+.chartSub {
+  font-size: 0.68rem;
+  color: var(--text-faint);
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.chartToggles {
+  display: flex;
+  gap: 0.25rem;
+  padding: 3px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  border: 1px solid var(--sep);
+}
+
+.chartToggle {
+  min-width: 2.1rem;
+  padding: 0.32rem 0.45rem;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  font-family: var(--font);
+  font-size: 0.62rem;
+  font-weight: 600;
+  color: var(--text-sub);
+  cursor: pointer;
+  transition:
+    background var(--t) var(--ease),
+    color var(--t) var(--ease);
+}
+
+.chartToggle:hover {
+  color: var(--text);
+}
+
+.chartToggleOn {
+  background: var(--accent);
+  color: #fff;
+}
+
+.chartPlot {
+  display: flex;
+  align-items: flex-end;
+  justify-content: stretch;
+  gap: 0.45rem;
+  height: 148px;
+  padding-top: 1.35rem;
+}
+
+.chartCol {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+}
+
+.chartBarWrap {
+  flex: 1;
+  width: 100%;
+  max-width: min(48px, 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.3rem;
+  position: relative;
+}
+
+.chartTag {
+  position: absolute;
+  bottom: 100%;
+  margin-bottom: 2px;
+  font-size: 0.58rem;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.chartBar {
+  width: 100%;
+  min-height: 6px;
+  border-radius: var(--r-sm) var(--r-sm) 2px 2px;
+  background: var(--surface-3);
+  transition: background var(--t) var(--ease);
+}
+
+.chartBarHi {
+  background: linear-gradient(180deg, var(--accent) 0%, #d05000 100%);
+}
+
+.chartDay {
+  margin-top: 0.4rem;
+  font-size: 0.58rem;
+  font-weight: 600;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* ─── Table ─────────────────────────────────────────────────────────────────── */
+.tableSection {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--sep);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.tableHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.8rem 0.95rem;
+  border-bottom: 1px solid var(--sep);
+  flex-wrap: wrap;
+}
+
+.tableTitle {
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  margin: 0;
+  color: var(--text);
+}
+
+.tableLink {
+  font-size: 0.64rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.tableLink:hover {
+  text-decoration: underline;
+}
+
+.tableScroll {
+  overflow: visible;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+.table th,
+.table td {
+  text-align: left;
+  padding: 0.72rem 0.95rem;
+  border-bottom: 1px solid var(--sep);
+}
+
+.table th {
+  font-size: 0.54rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-faint);
+  background: var(--surface-2);
+}
+
+.table tbody tr:hover td {
+  background: rgba(243, 244, 246, 0.55);
+}
+
+.sessionId {
+  font-weight: 600;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.leadCell {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.leadAvatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--surface-2);
+  border: 1px solid var(--sep);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.58rem;
+  font-weight: 600;
+  color: var(--text-sub);
+  flex-shrink: 0;
+}
+
+.leadName {
+  font-weight: 600;
+  color: var(--text);
+  margin: 0 0 0.12rem;
+}
+
+.leadSub {
+  font-size: 0.68rem;
+  color: var(--text-faint);
+  margin: 0;
+}
+
+.badgeOk {
+  display: inline-block;
+  font-size: 0.56rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  padding: 0.2rem 0.45rem;
+  border-radius: 999px;
+  background: var(--teal-bg);
+  color: var(--teal-text);
+}
+
+.badgeNeutral {
+  display: inline-block;
+  font-size: 0.56rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  padding: 0.2rem 0.45rem;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--text-sub);
+}
+
+.badgeWarn {
+  display: inline-block;
+  font-size: 0.56rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  padding: 0.2rem 0.45rem;
+  border-radius: 999px;
+  background: var(--red-bg);
+  color: var(--red-text);
+}
+
+.duration {
+  font-variant-numeric: tabular-nums;
+  color: var(--text-sub);
+  font-weight: 500;
+}
+
+@media (max-width: 900px) {
+  .chartRow {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 960px) {
+  .kpiGrid {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: none;
+    min-height: 0;
+  }
+
+  .capacityCard {
+    grid-column: 1 / -1;
+    grid-row: auto;
+  }
+
+  .sentimentCard {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
+  .orangeCard {
+    grid-column: 2;
+    grid-row: auto;
+  }
+
+  .leadCard {
+    grid-column: 1 / -1;
+    grid-row: auto;
+  }
+}
+
+@media (max-width: 560px) {
+  .kpiGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .sentimentCard,
+  .orangeCard {
+    grid-column: 1;
+  }
+}

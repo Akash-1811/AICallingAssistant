@@ -1,0 +1,14 @@
+{"id": "g1", "query": "What is the price of a 2BHK in Raymond Realty?", "must_contain_any": ["crore", "1.2"], "notes": "pricing"}
+{"id": "g2", "query": "How much does a 3BHK cost?", "must_contain_any": ["crore", "1.8", "2.8"], "notes": "3bhk range"}
+{"id": "g3", "query": "Where is Raymond Realty located?", "must_contain_any": ["Thane", "Mumbai"], "notes": "location"}
+{"id": "g4", "query": "What amenities are available in the project?", "must_contain_any": ["clubhouse", "pool", "gym"], "notes": "amenities"}
+{"id": "g5", "query": "Is there a swimming pool?", "must_contain_any": ["pool", "swimming"], "notes": "pool"}
+{"id": "g6", "query": "How is connectivity to Mumbai?", "must_contain_any": ["Express", "Ghodbunder", "highway"], "notes": "connectivity"}
+{"id": "g7", "query": "Why should I choose Raymond Realty?", "must_contain_any": ["Raymond", "brand", "quality"], "notes": "sales pitch"}
+{"id": "g8", "query": "Are there schools nearby?", "must_contain_any": ["school", "families"], "notes": "schools"}
+{"id": "g9", "query": "Can I get a discount?", "must_contain_any": ["offer", "availability", "booking"], "notes": "discount"}
+{"id": "g10", "query": "What about EMI for this property?", "must_contain_any": ["EMI", "loan"], "notes": "emi"}
+{"id": "g11", "query": "रेमंड रियल्टी में 2BHK की कीमत क्या है?", "must_contain_any": ["crore", "1.2"], "notes": "hindi pricing — cross-lingual retrieval"}
+{"id": "g12", "query": "प्रोजेक्ट कहाँ स्थित है?", "must_contain_any": ["Thane", "Mumbai"], "notes": "hindi location — cross-lingual retrieval"}
+{"id": "g13", "query": "प्रोजेक्ट में क्या सुविधाएं मिलेंगी?", "must_contain_any": ["clubhouse", "pool", "gym"], "notes": "hindi amenities — cross-lingual retrieval"}
+{"id": "g14", "query": "क्या होम लोन या EMI की सुविधा है?", "must_contain_any": ["EMI", "loan"], "notes": "hindi emi — cross-lingual retrieval"}

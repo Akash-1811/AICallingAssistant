@@ -1,0 +1,24 @@
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.74rem;
+  font-weight: 600;
+  padding: 0.28rem 0.65rem;
+  border-radius: var(--r-sm);
+  border: none;
+  background: var(--surface-3);
+  color: var(--text-sub);
+  cursor: pointer;
+  font-family: var(--font);
+  transition: background var(--t) var(--ease), color var(--t) var(--ease);
+}
+
+.btn:hover { background: var(--surface-hi); color: var(--text); }
+
+.copied {
+  color: var(--green);
+  background: var(--green-bg);
+}
+
+.copied:hover { color: var(--green); background: var(--green-bg); }

@@ -1,0 +1,950 @@
+/* ─── Hero ───────────────────────────────────────────────────────────────────── */
+.anHero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.25rem;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.anHeroLeft {
+  flex: 1;
+  min-width: min(100%, 320px);
+}
+
+.anEyebrow {
+  font-size: 0.62rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--accent);
+  margin: 0 0 0.45rem;
+}
+
+.anHeroTitle {
+  font-family: var(--font);
+  font-size: clamp(1.5rem, 2.8vw, 2.05rem);
+  font-weight: 600;
+  line-height: 1.18;
+  letter-spacing: -0.035em;
+  margin: 0 0 0.65rem;
+  color: var(--text);
+}
+
+.anHeroTitleDark {
+  color: var(--text);
+}
+
+.anHeroTitleAccent {
+  color: var(--accent);
+}
+
+.anHeroBody {
+  font-size: 0.88rem;
+  line-height: 1.65;
+  color: var(--text-sub);
+  margin: 0;
+  max-width: 42rem;
+}
+
+.anHeroStatus {
+  flex-shrink: 0;
+  text-align: right;
+}
+
+.anStatusLabel {
+  display: block;
+  font-size: 0.56rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--text-faint);
+  margin-bottom: 0.35rem;
+}
+
+.anStatusRow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--teal-text);
+}
+
+.anStatusDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--teal);
+  box-shadow: 0 0 0 3px var(--teal-bg);
+}
+
+/* ─── 2×2 chart grid ────────────────────────────────────────────────────────── */
+.graphGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.85rem;
+  flex-shrink: 0;
+}
+
+.graphCard {
+  background: var(--surface);
+  border: 1px solid var(--sep);
+  border-radius: var(--r-lg);
+  padding: 1rem 1.05rem 1rem;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  min-height: 220px;
+}
+
+.graphCardHead {
+  margin-bottom: 0.85rem;
+}
+
+.graphTitle {
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text);
+  margin: 0 0 0.2rem;
+}
+
+.graphCaption {
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--text-faint);
+  margin: 0;
+}
+
+.graphBody {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+/* Vertical bars */
+.barCluster {
+  display: flex;
+  align-items: flex-end;
+  justify-content: stretch;
+  gap: 0.4rem;
+  height: 140px;
+  padding-top: 0.2rem;
+}
+
+.barCol {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.45rem;
+  height: 100%;
+  border: none;
+  padding: 0;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+}
+
+.chartHit {
+  cursor: pointer;
+  transition:
+    transform var(--t) var(--ease),
+    box-shadow var(--t) var(--ease),
+    background var(--t) var(--ease),
+    border-color var(--t) var(--ease);
+}
+
+.chartHit:hover {
+  transform: translateY(-1px);
+}
+
+.barCol.chartHit:hover .barFill {
+  filter: brightness(1.05);
+  box-shadow: 0 4px 14px rgba(230, 81, 0, 0.22);
+}
+
+.hBarRow.chartHit {
+  width: 100%;
+  border: none;
+  padding: 0;
+  background: transparent;
+  text-align: left;
+  font: inherit;
+}
+
+.hBarRow.chartHit:hover .hBarFill {
+  filter: brightness(1.04);
+}
+
+.insightStat.chartHit {
+  border: 1px solid var(--sep);
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+}
+
+.insightStat.chartHit:hover {
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--sep));
+  background: color-mix(in srgb, var(--accent) 5%, var(--surface-2));
+}
+
+.coachHeader.chartHit {
+  width: 100%;
+  border: none;
+  padding: 0;
+  background: transparent;
+  text-align: left;
+  font: inherit;
+}
+
+.talkBalanceTrack.chartHit {
+  width: 100%;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.talkBalanceTrack.chartHit:hover .talkBalanceRep {
+  filter: brightness(1.04);
+}
+
+/* Drill-down modal */
+.drillBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  box-sizing: border-box;
+}
+
+.drillModal {
+  width: min(820px, 100%);
+  max-height: min(88vh, 860px);
+  background: var(--surface);
+  border-radius: 16px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--sep);
+}
+
+.drillHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.15rem;
+  border-bottom: 1px solid var(--sep);
+  background: linear-gradient(180deg, var(--surface-2) 0%, var(--surface) 100%);
+}
+
+.drillEyebrow {
+  margin: 0 0 0.25rem;
+  font-size: 0.58rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--accent);
+}
+
+.drillTitle {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.25;
+}
+
+.drillSubtitle {
+  margin: 0.35rem 0 0;
+  font-size: 0.78rem;
+  color: var(--text-sub);
+}
+
+.drillClose {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: var(--r-sm);
+  background: var(--surface-2);
+  color: var(--text-sub);
+  font-size: 1.35rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background var(--t) var(--ease), color var(--t) var(--ease);
+}
+
+.drillClose:hover {
+  background: var(--surface-3);
+  color: var(--text);
+}
+
+.drillStats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.65rem;
+  padding: 0.85rem 1.15rem;
+  border-bottom: 1px solid var(--sep);
+}
+
+.drillStat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.12rem;
+  padding: 0.55rem 0.65rem;
+  border-radius: 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--sep);
+}
+
+.drillStatValue {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.drillStatLabel {
+  font-size: 0.62rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-sub);
+}
+
+.drillBody {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 0.35rem 0;
+}
+
+.drillTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+.drillTable th,
+.drillTable td {
+  text-align: left;
+  padding: 0.72rem 1.15rem;
+  border-bottom: 1px solid var(--sep);
+}
+
+.drillTable th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  font-size: 0.58rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-faint);
+  background: var(--surface);
+}
+
+.drillTable tbody tr:hover td {
+  background: rgba(243, 244, 246, 0.55);
+}
+
+.drillReviewLink {
+  font-weight: 600;
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.drillReviewLink:hover {
+  text-decoration: underline;
+}
+
+.drillEmpty {
+  margin: 2rem 1.15rem;
+  text-align: center;
+  color: var(--text-sub);
+  font-size: 0.82rem;
+}
+
+.drillFoot {
+  padding: 0.65rem 1.15rem;
+  border-top: 1px solid var(--sep);
+  font-size: 0.68rem;
+  color: var(--text-faint);
+}
+
+.barFill {
+  width: 100%;
+  max-width: 36px;
+  margin-top: auto;
+  min-height: 8px;
+  border-radius: var(--r-sm) var(--r-sm) 2px 2px;
+  background: linear-gradient(180deg, var(--accent) 0%, #d05000 100%);
+  transition: opacity var(--t) var(--ease);
+}
+
+.barFill:hover {
+  opacity: 0.92;
+}
+
+.barTick {
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Horizontal bars */
+.hBarList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  justify-content: center;
+  flex: 1;
+}
+
+.hBarRow {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-rows: auto auto;
+  align-items: center;
+  gap: 0.2rem 0.45rem;
+  font-size: 0.68rem;
+}
+
+.hBarLabel {
+  grid-column: 1 / -1;
+  grid-row: 1;
+  color: var(--text-sub);
+  font-size: 0.64rem;
+  font-weight: 500;
+  line-height: 1.25;
+}
+
+.hBarTrack {
+  grid-column: 1;
+  grid-row: 2;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  overflow: hidden;
+}
+
+.hBarFill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent) 0%, #d05000 100%);
+}
+
+.hBarFill[data-tone="positive"] {
+  background: linear-gradient(90deg, #0f766e 0%, #14b8a6 100%);
+}
+
+.hBarFill[data-tone="risk"] {
+  background: linear-gradient(90deg, #9a3412 0%, #ea580c 100%);
+}
+
+.hBarVal {
+  grid-column: 2;
+  grid-row: 2;
+  text-align: right;
+  font-size: 0.66rem;
+  font-weight: 600;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.graphEmpty,
+.tableEmpty {
+  margin: auto 0;
+  font-size: 0.78rem;
+  color: var(--text-sub);
+  text-align: center;
+  line-height: 1.45;
+  padding: 0.5rem;
+}
+
+.insightStack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  justify-content: center;
+  flex: 1;
+}
+
+.insightGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.insightStat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.55rem 0.6rem;
+  border-radius: 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--sep);
+}
+
+.insightStatValue {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.insightStatLabel {
+  font-size: 0.62rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-sub);
+}
+
+.insightNote {
+  margin: 0;
+  font-size: 0.72rem;
+  line-height: 1.45;
+  color: var(--text-sub);
+}
+
+.coachHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.coachBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.18rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.64rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.coachBadge[data-tone="balanced"] {
+  background: color-mix(in srgb, var(--teal-text) 14%, transparent);
+  color: var(--teal-text);
+}
+
+.coachBadge[data-tone="rep_heavy"],
+.coachBadge[data-tone="prospect_heavy"] {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--accent);
+}
+
+.coachMeta {
+  font-size: 0.68rem;
+  color: var(--text-sub);
+  font-variant-numeric: tabular-nums;
+}
+
+.outcomePill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.14rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.66rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.outcomePill[data-tone="qualified"] {
+  background: color-mix(in srgb, var(--teal-text) 14%, transparent);
+  color: var(--teal-text);
+}
+
+.outcomePill[data-tone="follow_up"] {
+  background: color-mix(in srgb, #5b6b8c 14%, transparent);
+  color: #5b6b8c;
+}
+
+.outcomePill[data-tone="at_risk"] {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--accent);
+}
+
+.outcomePill[data-tone="nurture"],
+.outcomePill[data-tone="pending"] {
+  background: var(--surface-2);
+  color: var(--text-sub);
+}
+
+.talkBalance {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  justify-content: center;
+  flex: 1;
+}
+
+.talkBalanceTrack {
+  height: 12px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  overflow: hidden;
+}
+
+.talkBalanceRep {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent) 0%, #d05000 100%);
+}
+
+.talkBalanceLabels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.74rem;
+  color: var(--text-sub);
+}
+
+.talkBalanceLabels strong {
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.talkBalanceHint {
+  margin: 0;
+  font-size: 0.68rem;
+  color: var(--text-sub);
+  line-height: 1.4;
+}
+
+.scorePill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2rem;
+  padding: 0.12rem 0.4rem;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.scorePill[data-tone="high"] {
+  background: color-mix(in srgb, var(--teal-text) 14%, transparent);
+  color: var(--teal-text);
+}
+
+.scorePill[data-tone="mid"] {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--accent);
+}
+
+.scorePill[data-tone="low"] {
+  background: var(--surface-2);
+  color: var(--text-sub);
+}
+
+.dimCaption {
+  margin: 0;
+  font-size: 0.68rem;
+  color: var(--text-sub);
+}
+
+/* ─── Table ─────────────────────────────────────────────────────────────────── */
+.dimPanel {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--sep);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.dimHead {
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid var(--sep);
+}
+
+.dimTitle {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text);
+  margin: 0;
+}
+
+.dimScroll {
+  overflow: auto;
+  flex: 1;
+  min-height: 0;
+}
+
+.dimTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+.dimTable th,
+.dimTable td {
+  text-align: left;
+  padding: 0.72rem 1rem;
+  border-bottom: 1px solid var(--sep);
+}
+
+.dimTable th {
+  font-size: 0.58rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-faint);
+  background: var(--surface-2);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.dimTable td {
+  color: var(--text-sub);
+}
+
+.dimTable tbody tr:hover td {
+  background: rgba(243, 244, 246, 0.6);
+}
+
+/* ─── Right rail ─────────────────────────────────────────────────────────────── */
+.rangeCard {
+  background: var(--surface);
+  border: 1px solid var(--sep);
+  border-radius: 14px;
+  padding: 1rem 1.05rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.rangeTitle {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin: 0 0 0.65rem;
+  color: var(--text);
+}
+
+.rangeRow {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.rangePill {
+  flex: 1;
+  padding: 0.45rem 0.4rem;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--sep);
+  background: var(--surface-2);
+  font-family: var(--font);
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-sub);
+  cursor: pointer;
+  transition:
+    border-color var(--t) var(--ease),
+    background var(--t) var(--ease),
+    color var(--t) var(--ease);
+}
+
+.rangePill:hover {
+  border-color: var(--accent);
+  color: var(--accent-text);
+}
+
+.rangePillActive {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+  color: var(--accent-text);
+}
+
+.exportCard {
+  padding: 1rem 1.05rem;
+  border-radius: 14px;
+  background: #1e1e1e;
+  box-shadow: var(--shadow-sm);
+}
+
+.exportTitle {
+  font-size: 0.58rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--accent);
+  margin: 0 0 0.65rem;
+}
+
+.exportBtn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  padding: 0.62rem 0.75rem;
+  border-radius: var(--r);
+  border: none;
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.92);
+  font-family: var(--font);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  cursor: pointer;
+  transition: background var(--t) var(--ease);
+}
+
+.exportBtn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.exportBtn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.exportHint {
+  font-size: 0.72rem;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.5);
+  margin: 0.65rem 0 0;
+}
+
+.snapshotCard {
+  background: var(--surface);
+  border: 1px solid var(--sep);
+  border-radius: 14px;
+  padding: 1rem 1.05rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.railCardTitle {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin: 0 0 0.35rem;
+  color: var(--text);
+}
+
+.snapshotSub {
+  font-size: 0.68rem;
+  color: var(--text-faint);
+  margin: 0 0 0.75rem;
+}
+
+.snapshotList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.snapshotRow {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: baseline;
+  gap: 0.35rem 0.5rem;
+  padding: 0.55rem 0;
+  border-top: 1px solid var(--sep);
+  font-size: 0.78rem;
+}
+
+.snapshotRow:first-of-type {
+  border-top: none;
+  padding-top: 0;
+}
+
+.snapshotLabel {
+  color: var(--text-sub);
+  font-weight: 500;
+}
+
+.snapshotValue {
+  font-weight: 700;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.coverageCard {
+  background: linear-gradient(165deg, var(--surface-2) 0%, var(--surface) 100%);
+  border: 1px solid var(--sep);
+  border-radius: 14px;
+  padding: 1rem 1.05rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.coverageCaption {
+  font-size: 0.7rem;
+  color: var(--text-sub);
+  margin: 0 0 0.65rem;
+  line-height: 1.4;
+}
+
+.coverageTrack {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--surface-3);
+  overflow: hidden;
+  margin-bottom: 0.4rem;
+}
+
+.coverageFill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent) 0%, #d05000 100%);
+}
+
+.coveragePct {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0;
+}
+
+@media (max-width: 1100px) {
+  .anHero {
+    flex-direction: column;
+  }
+
+  .anHeroStatus {
+    text-align: left;
+  }
+}
+
+@media (max-width: 900px) {
+  .graphGrid {
+    grid-template-columns: 1fr;
+  }
+}

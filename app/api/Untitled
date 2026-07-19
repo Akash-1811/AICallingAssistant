@@ -1,0 +1,32 @@
+from fastapi import APIRouter, WebSocket
+from app.services.deepgram_service import DeepgramService
+from app.services.gemini_service import GeminiService
+from app.modules.rag.retriever import RAGRetriever
+
+router = APIRouter()
+
+@router.websocket("/ws")
+async def websocket_endpoint(ws: WebSocket):
+    await ws.accept()
+
+    deepgram = DeepgramService()
+    gemini = GeminiService()
+    rag = RAGRetriever()
+
+    while True:
+        data = await ws.receive_bytes()  # audio chunk
+
+        # 1. Speech → Text
+        transcript = await deepgram.transcribe(data)
+
+        if not transcript:
+            continue
+
+        # 2. RAG Retrieval
+        context = rag.search(transcript)
+
+        # 3. Gemini Response
+        response = gemini.generate_response(transcript, context)
+
+        # 4. Send back suggestion
+        await ws.send_text(response)

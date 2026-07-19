@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AI Sales Assistant — Cost Summary</title>
+  <style>
+    :root {
+      --bg: #0f1419;
+      --panel: #1a2332;
+      --text: #e8eaed;
+      --muted: #9aa0a6;
+      --accent: #3b82f6;
+      --border: #2d3a4d;
+      --highlight: #152238;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      font-size: 15px;
+    }
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 2rem 1.25rem 3rem; }
+    h1 { font-size: 1.65rem; font-weight: 650; margin: 0 0 0.35rem; letter-spacing: -0.02em; }
+    .sub { color: var(--muted); font-size: 0.95rem; margin-bottom: 1.5rem; }
+    .disclaimer {
+      background: var(--highlight);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.85rem 1rem;
+      font-size: 0.88rem;
+      color: var(--muted);
+      margin-bottom: 2rem;
+    }
+    h2 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin: 2rem 0 0.75rem;
+      color: var(--accent);
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0.35rem;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+      margin-bottom: 0.25rem;
+    }
+    th, td {
+      border: 1px solid var(--border);
+      padding: 0.55rem 0.65rem;
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      background: var(--panel);
+      font-weight: 600;
+      color: #cbd5e1;
+    }
+    tr:nth-child(even) td { background: rgba(255,255,255,0.02); }
+    .num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .total-row td { background: var(--highlight) !important; font-weight: 600; color: #fff; }
+    .total-row .num { font-size: 1.05rem; }
+    caption {
+      text-align: left;
+      font-size: 0.82rem;
+      color: var(--muted);
+      padding: 0.35rem 0 0.6rem;
+    }
+    footer {
+      margin-top: 2.5rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border);
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+    @media print {
+      body { background: #fff; color: #111; }
+      th, td { border-color: #ccc; }
+      .disclaimer { border-color: #ccc; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>AI Sales Assistant — Cost summary</h1>
+    <p class="sub">Deepgram (speech) + Gemini or OpenAI (text) + servers + optional post-call analysis. Figures are <strong>planning examples</strong> — replace with your vendor invoices.</p>
+
+    <div class="disclaimer">
+      <strong>Rates used in examples:</strong> Deepgram ~$0.009/streamed minute · Gemini-style text ~$0.004/suggestion (live coaching) · Post-call: $0.30/M input + $2.50/M output tokens. Multilingual speech and English-first knowledge base; optional Hindi translation for search adds small extra Gemini use.
+    </div>
+
+    <h2>1. Unit costs (live assistant)</h2>
+    <table>
+      <caption>What you pay for by unit — AI vendors only for text columns where marked.</caption>
+      <thead>
+        <tr>
+          <th>Unit</th>
+          <th>What is charged</th>
+          <th class="num">Deepgram (speech)</th>
+          <th class="num">Gemini / OpenAI (text)</th>
+          <th class="num">Total AI tools</th>
+          <th>Notes</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Per 1 min (mic live)</td>
+          <td>Speech every minute; text when a suggestion fires</td>
+          <td class="num">~$0.009</td>
+          <td class="num">$0 – ~$0.006</td>
+          <td class="num">~$0.009 – $0.015</td>
+          <td>Deepgram steady; text in bursts.</td>
+        </tr>
+        <tr>
+          <td>Per AI suggestion</td>
+          <td>One coaching block written</td>
+          <td class="num">—</td>
+          <td class="num">~$0.002 – $0.006</td>
+          <td class="num">~$0.002 – $0.006</td>
+          <td>One billable LLM write.</td>
+        </tr>
+        <tr>
+          <td>Per rep line (“question”)</td>
+          <td>Usually 1 suggestion</td>
+          <td class="num">—</td>
+          <td class="num">~$0.002 – $0.006</td>
+          <td class="num">same + minute of speech</td>
+          <td>Short lines → more suggestions/min.</td>
+        </tr>
+        <tr>
+          <td>Example 10 min call</td>
+          <td>10 min + ~8–20 suggestions</td>
+          <td class="num">~$0.09</td>
+          <td class="num">~$0.02 – $0.12</td>
+          <td class="num">~$0.11 – $0.22</td>
+          <td>One call total (example).</td>
+        </tr>
+        <tr>
+          <td>1 salesperson · 20 h mic/mo</td>
+          <td>Listening + suggestions</td>
+          <td class="num">~$11</td>
+          <td class="num">~$1 – $4</td>
+          <td class="num">~$12 – $15</td>
+          <td>12 vs 30 sugg./hour band.</td>
+        </tr>
+        <tr>
+          <td>Whole company</td>
+          <td>Sum all users</td>
+          <td class="num">Σ minutes × rate</td>
+          <td class="num">Σ suggestions × rate</td>
+          <td class="num">Both vendors</td>
+          <td>No flat “per user” from vendors.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>2. Monthly AI tools — 20 salespeople (example)</h2>
+    <p style="color:var(--muted);font-size:0.88rem;margin:0 0 0.75rem;">20 people × 4 h/day × 22 workdays = <strong>1,760 person-hours</strong> → <strong>105,600</strong> streamed minutes.</p>
+    <table>
+      <thead>
+        <tr>
+          <th>Team style</th>
+          <th>Suggestions (example)</th>
+          <th class="num">Deepgram</th>
+          <th class="num">Gemini / OpenAI</th>
+          <th class="num">Total AI tools</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Calmer — ~10 / person-hour</td>
+          <td>17,600</td>
+          <td class="num">~$950</td>
+          <td class="num">~$70</td>
+          <td class="num">~$1,020</td>
+        </tr>
+        <tr>
+          <td>Busier — ~30 / person-hour</td>
+          <td>52,800</td>
+          <td class="num">~$950</td>
+          <td class="num">~$211</td>
+          <td class="num">~$1,160</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>3. Server &amp; infrastructure (monthly examples)</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Item</th>
+          <th>Role</th>
+          <th class="num">Example $ / month</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Backend / API VM</td>
+          <td>FastAPI, embeddings, rerank — needs RAM (often 4–8 GB+)</td>
+          <td class="num">~$40 – $200</td>
+        </tr>
+        <tr>
+          <td>Qdrant</td>
+          <td>Vector search — bundled on same VM or separate / cloud</td>
+          <td class="num">~$0 – $150+</td>
+        </tr>
+        <tr>
+          <td>Redis (optional)</td>
+          <td>Sessions / cache</td>
+          <td class="num">~$0 – $80</td>
+        </tr>
+        <tr>
+          <td>Load balancer, TLS, DNS</td>
+          <td>Traffic &amp; HTTPS</td>
+          <td class="num">~$0 – $50</td>
+        </tr>
+        <tr>
+          <td>Disk &amp; backups</td>
+          <td>Logs, model cache</td>
+          <td class="num">~$5 – $40</td>
+        </tr>
+        <tr>
+          <td>Dashboard UI</td>
+          <td>Static or same host</td>
+          <td class="num">~$0 – $25</td>
+        </tr>
+      </tbody>
+    </table>
+    <p style="color:var(--muted);font-size:0.88rem;">Typical <strong>single-stack</strong> (Docker-style): <strong>~$60 – $250 / month</strong> all-in. Split / HA stacks: <strong>~$200 – $800+ / month</strong>.</p>
+
+    <h2>4. Post-call analysis — customer interest &amp; caller performance (planned)</h2>
+    <p style="color:var(--muted);font-size:0.88rem;margin:0 0 0.75rem;">One Gemini/OpenAI call after each completed call. <strong>Customer interest</strong> and <strong>caller performance</strong> in <strong>one</strong> prompt (same token bucket).</p>
+    <table>
+      <thead>
+        <tr>
+          <th>Metric</th>
+          <th>Per analysis</th>
+          <th>Monthly (20 users × 60 calls)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Analyses</td>
+          <td>1</td>
+          <td class="num">1,200</td>
+        </tr>
+        <tr>
+          <td>Input tokens</td>
+          <td>~4,000 – 6,500</td>
+          <td>~4.8M – 7.8M</td>
+        </tr>
+        <tr>
+          <td>Output tokens</td>
+          <td>~600 – 900</td>
+          <td>~0.72M – 1.08M</td>
+        </tr>
+        <tr>
+          <td>Total tokens (in + out)</td>
+          <td>~5,000 – 7,500</td>
+          <td>~5.5M – 8.9M</td>
+        </tr>
+        <tr class="total-row">
+          <td>≈ Cost (Gemini-style rates)</td>
+          <td class="num">~$0.0027 – $0.0042</td>
+          <td class="num">~$3 – $5 / mo</td>
+        </tr>
+      </tbody>
+    </table>
+    <p style="color:var(--muted);font-size:0.88rem;">This is <strong>only</strong> post-call text AI — not Deepgram, not live coaching, not servers.</p>
+
+    <h2>5. Total monthly running cost</h2>
+    <table>
+      <caption>Includes live AI tools + optional post-call + infrastructure band. Pick the column that matches your chatter + hosting.</caption>
+      <thead>
+        <tr>
+          <th>Component</th>
+          <th class="num">Calmer team</th>
+          <th class="num">Busier team</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Deepgram + Gemini/OpenAI (live coaching)</td>
+          <td class="num">~$1,020</td>
+          <td class="num">~$1,160</td>
+        </tr>
+        <tr>
+          <td>Post-call analysis (20 × 60 calls)</td>
+          <td class="num">~$3 – $5</td>
+          <td class="num">~$3 – $5</td>
+        </tr>
+        <tr>
+          <td>Servers &amp; DB (bundled VM example band)</td>
+          <td class="num">~$60 – $250</td>
+          <td class="num">~$60 – $250</td>
+        </tr>
+        <tr>
+          <td>Monitoring, LB, UI (optional, small)</td>
+          <td class="num">~$0 – $100</td>
+          <td class="num">~$0 – $100</td>
+        </tr>
+        <tr class="total-row">
+          <td><strong>Approx. total / month</strong></td>
+          <td class="num">~$1,083 – $1,375</td>
+          <td class="num">~$1,223 – $1,515</td>
+        </tr>
+      </tbody>
+    </table>
+    <p style="color:var(--muted);font-size:0.88rem;margin-top:0.5rem;">All figures above are <strong>recurring monthly</strong> examples. Add your own one-time build/deploy budget separately if needed.</p>
+
+    <footer>
+      AI Sales Assistant cost summary · Generated from project planning assumptions · Update rates from
+      <a href="https://deepgram.com/pricing" style="color:var(--accent);">Deepgram</a>,
+      <a href="https://ai.google.dev/pricing" style="color:var(--accent);">Google AI</a> /
+      <a href="https://openai.com/api/pricing/" style="color:var(--accent);">OpenAI</a>,
+      and your cloud console.
+    </footer>
+  </div>
+</body>
+</html>

@@ -1,0 +1,440 @@
+/* ─── Hero ─────────────────────────────────────────────────────────────────── */
+.kbHero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.25rem;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.kbHeroLeft {
+  flex: 1;
+  min-width: min(100%, 320px);
+}
+
+.kbEyebrow {
+  font-size: 0.62rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--accent);
+  margin: 0 0 0.45rem;
+}
+
+.kbHeroTitle {
+  font-family: var(--font);
+  font-size: clamp(1.5rem, 2.8vw, 2.05rem);
+  font-weight: 700;
+  line-height: 1.18;
+  letter-spacing: -0.035em;
+  margin: 0 0 0.65rem;
+  color: var(--text);
+}
+
+.kbHeroTitleDark {
+  color: var(--text);
+}
+
+.kbHeroTitleAccent {
+  color: var(--accent);
+}
+
+.kbHeroBody {
+  font-size: 0.88rem;
+  line-height: 1.65;
+  color: var(--text-sub);
+  margin: 0;
+  max-width: 42rem;
+}
+
+.kbHeroStatus {
+  flex-shrink: 0;
+  text-align: right;
+}
+
+.kbStatusLabel {
+  display: block;
+  font-size: 0.56rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--text-faint);
+  margin-bottom: 0.35rem;
+}
+
+.kbStatusRow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--teal-text);
+}
+
+.kbStatusDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--teal);
+  box-shadow: 0 0 0 3px var(--teal-bg);
+}
+
+/* ─── Drop zone ────────────────────────────────────────────────────────────── */
+.kbDropzone {
+  position: relative;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 1.85rem 1.5rem 1.75rem;
+  background: var(--surface);
+  border: 2px dashed rgba(235, 87, 0, 0.35);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.kbFileInput {
+  position: absolute;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.kbDropIcon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--accent-dim);
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.85rem;
+}
+
+.kbDropTitle {
+  font-size: 0.95rem;
+  font-weight: 700;
+  text-transform: capitalize;
+  color: var(--text);
+  margin: 0 0 0.4rem;
+}
+
+.kbDropHint {
+  font-size: 0.8rem;
+  line-height: 1.55;
+  color: var(--text-faint);
+  margin: 0 0 1rem;
+  max-width: 26rem;
+}
+
+.kbDropActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  justify-content: center;
+}
+
+.kbBtnPrimary {
+  padding: 0.55rem 1.15rem;
+  border-radius: var(--r);
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  font-family: var(--font);
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: capitalize;
+  cursor: pointer;
+  transition: background var(--t) var(--ease);
+}
+
+.kbBtnPrimary:hover {
+  background: var(--accent-hover);
+}
+
+.kbBtnPrimary:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.kbDropNote {
+  margin: 0.85rem 0 0;
+  font-size: 0.78rem;
+  color: var(--text-sub);
+  max-width: 28rem;
+}
+
+.kbStatusDot[data-active="false"] {
+  background: var(--text-faint);
+  box-shadow: none;
+}
+
+/* ─── Library table ────────────────────────────────────────────────────────── */
+.kbLibrary {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--sep);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.kbLibraryHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid var(--sep);
+  flex-shrink: 0;
+}
+
+.kbLibraryTitle {
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text);
+  margin: 0;
+}
+
+.kbLibraryMeta {
+  font-size: 0.72rem;
+  color: var(--text-faint);
+}
+
+.kbTableScroll {
+  overflow: auto;
+  flex: 1;
+  min-height: 0;
+}
+
+.kbTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+.kbTable th,
+.kbTable td {
+  text-align: left;
+  padding: 0.72rem 1rem;
+  border-bottom: 1px solid var(--sep);
+}
+
+.kbTable th {
+  font-size: 0.58rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-faint);
+  background: var(--surface-2);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.kbTable td {
+  color: var(--text-sub);
+}
+
+.kbTable tbody tr:hover td {
+  background: rgba(243, 244, 246, 0.6);
+}
+
+.kbBadgeOk {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--teal-text);
+  background: var(--teal-bg);
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+}
+
+.kbBadgePending {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--amber-text);
+  background: var(--amber-bg);
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+}
+
+.kbBadgeFailed {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--red-text, #b42318);
+  background: var(--red-bg, rgba(180, 35, 24, 0.1));
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+}
+
+.kbActions {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.kbLinkBtn {
+  border: none;
+  background: none;
+  padding: 0;
+  margin-left: 0.65rem;
+  font-family: var(--font);
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--accent-text);
+  cursor: pointer;
+}
+
+.kbLinkBtn:hover {
+  text-decoration: underline;
+}
+
+.kbEmpty {
+  padding: 2rem 1rem;
+  text-align: center;
+  color: var(--text-faint);
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+/* ─── Right rail: sync + storage ───────────────────────────────────────────── */
+.syncCard {
+  background: var(--surface);
+  border: 1px solid var(--sep);
+  border-radius: 14px;
+  padding: 1rem 1.05rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.syncCardHead {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-bottom: 0.85rem;
+  color: var(--text);
+}
+
+.syncCardHead svg {
+  color: var(--accent);
+}
+
+.syncCardTitle {
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin: 0;
+  color: var(--text);
+}
+
+.syncHint {
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--text-sub);
+  margin: 0 0 0.85rem;
+}
+
+.manualSyncBtn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  padding: 0.62rem 0.75rem;
+  border-radius: var(--r);
+  border: none;
+  background: #1e1e1e;
+  color: rgba(255, 255, 255, 0.92);
+  font-family: var(--font);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  cursor: pointer;
+  transition: background var(--t) var(--ease);
+}
+
+.manualSyncBtn svg {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.manualSyncBtn:hover {
+  background: #2a2a2a;
+}
+
+.manualSyncBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.storageCard {
+  margin-top: 0.85rem;
+  padding: 1rem 1.05rem;
+  border-radius: 14px;
+  background: #1e1e1e;
+  box-shadow: var(--shadow-sm);
+}
+
+.storageEyebrow {
+  font-size: 0.58rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--accent);
+  margin: 0 0 0.35rem;
+}
+
+.storagePct {
+  font-size: 1.65rem;
+  font-weight: 800;
+  color: #fff;
+  margin: 0 0 0.5rem;
+  line-height: 1;
+}
+
+.storageTrack {
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+  margin-bottom: 0.55rem;
+}
+
+.storageFill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent) 0%, #d05000 100%);
+}
+
+.storageHint {
+  font-size: 0.72rem;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.55);
+  margin: 0;
+}
+
+@media (max-width: 1100px) {
+  .kbHero {
+    flex-direction: column;
+  }
+
+  .kbHeroStatus {
+    text-align: left;
+  }
+}

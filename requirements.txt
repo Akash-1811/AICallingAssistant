@@ -1,0 +1,27 @@
+fastapi
+python-multipart
+uvicorn
+# Pin to 1.12.x to match Qdrant server in docker-compose (v1.12.x). Newer clients
+# (e.g. 1.17+) drop QdrantClient.search() and warn on server/client skew.
+qdrant-client>=1.12.0,<1.13.0
+sentence-transformers
+google-genai
+openai>=1.0.0
+python-dotenv
+pydantic
+pydantic-settings
+email-validator>=2.0.0
+numpy
+websockets
+# v6 renames listen websocket API (use listen.v1.connect + AsyncDeepgramClient).
+deepgram-sdk>=6.0.0,<7.0.0
+redis>=5
+sqlalchemy[asyncio]>=2.0.0
+asyncpg>=0.29.0
+aiosqlite>=0.20.0
+bcrypt>=4.0.0
+PyJWT>=2.8.0
+pypdf>=4.0.0
+opentelemetry-api
+opentelemetry-sdk
+pytest>=8.0.0

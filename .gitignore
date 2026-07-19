@@ -1,0 +1,24 @@
+# Secrets — never commit
+.env
+*.pem
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+
+# Node
+frontend/node_modules/
+frontend/dist/
+
+# Runtime data (top-level only — app/data holds source KB files and IS tracked)
+/data/
+
+# Scratch / IDE
+.tmp_dg/
+.tmp_dg2/
+.idea/
+.vscode/
