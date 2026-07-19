@@ -24,7 +24,10 @@ const RANGE_OPTIONS: { id: Range; label: string }[] = [
   { id: "90d", label: "90 days" },
 ];
 
-const OUTCOME_LABELS: Record<AnalyticsCallRow["outcome"], { text: string; tone: "good" | "warn" | "risk" | "neutral" }> = {
+const OUTCOME_LABELS: Record<
+  AnalyticsCallRow["outcome"],
+  { text: string; tone: "good" | "warn" | "risk" | "neutral" }
+> = {
   qualified: { text: "Strong lead", tone: "good" },
   follow_up: { text: "Needs follow-up", tone: "warn" },
   at_risk: { text: "May slip away", tone: "risk" },
@@ -32,7 +35,10 @@ const OUTCOME_LABELS: Record<AnalyticsCallRow["outcome"], { text: string; tone: 
   pending: { text: "Being reviewed", tone: "neutral" },
 };
 
-const TALK_VERDICTS: Record<AnalyticsSummary["coaching_snapshot"]["talk_balance_label"], { text: string; note: string }> = {
+const TALK_VERDICTS: Record<
+  AnalyticsSummary["coaching_snapshot"]["talk_balance_label"],
+  { text: string; note: string }
+> = {
   balanced: {
     text: "Good balance",
     note: "Right in the healthy range — customers get room to talk.",
@@ -46,6 +52,13 @@ const TALK_VERDICTS: Record<AnalyticsSummary["coaching_snapshot"]["talk_balance_
     note: "Great listening — make sure key questions still get asked.",
   },
 };
+
+function toneClass(tone: "good" | "warn" | "risk" | "neutral"): string {
+  if (tone === "good") return styles.pillGood;
+  if (tone === "warn") return styles.pillWarn;
+  if (tone === "risk") return styles.pillRisk;
+  return styles.pillNeutral;
+}
 
 export function DashboardPage() {
   const [range, setRange] = useState<Range>("30d");
@@ -74,7 +87,14 @@ export function DashboardPage() {
     };
   }, [range]);
 
-  const recentCalls = useMemo(() => (summary?.calls ?? []).slice(0, 5), [summary]);
+  const recentCalls = useMemo(() => (summary?.calls ?? []).slice(0, 6), [summary]);
+  const actionCalls = useMemo(
+    () =>
+      (summary?.calls ?? [])
+        .filter((c) => c.outcome === "follow_up" || c.outcome === "at_risk")
+        .slice(0, 5),
+    [summary]
+  );
   const maxVolume = useMemo(
     () => Math.max(...(summary?.weekly_volume ?? []).map((b) => b.count), 1),
     [summary]
@@ -93,6 +113,8 @@ export function DashboardPage() {
     : 0;
   const coach = summary?.coaching_snapshot;
   const verdict = coach ? TALK_VERDICTS[coach.talk_balance_label] : null;
+  const signals = summary?.signal_balance;
+  const signalMax = Math.max(signals?.buying_signals_total ?? 0, signals?.objections_total ?? 0, 1);
 
   return (
     <div className={appStyles.content}>
@@ -133,11 +155,12 @@ export function DashboardPage() {
             </Link>
           </section>
         ) : (
-          <>
-            <section className={styles.kpiGrid} aria-label="Key numbers">
-              <article className={styles.heroCard}>
+          <div className={styles.grid}>
+            {/* ── Row 1: dark hero + calls made ─────────────────────── */}
+            <section className={`${styles.darkCard} ${styles.spanHero}`} aria-label="Where your leads stand">
+              <div className={styles.heroTop}>
                 <div>
-                  <p className={styles.cardLabel}>Where your leads stand</p>
+                  <p className={styles.darkLabel}>Where your leads stand</p>
                   <p className={styles.heroValue}>
                     {pipeline?.qualified_calls ?? "—"}
                     <span className={styles.heroUnit}> strong leads</span>
@@ -146,117 +169,144 @@ export function DashboardPage() {
                     Counted from what each customer actually said on the call.
                   </p>
                 </div>
-                <div>
-                  {summary && summary.analyzed_conversations > 0 ? (
-                    <div className={styles.splitBar} aria-hidden="true">
-                      {(
-                        [
-                          [pipeline?.qualified_calls ?? 0, styles.splitGood],
-                          [pipeline?.follow_up_calls ?? 0, styles.splitWarn],
-                          [pipeline?.at_risk_calls ?? 0, styles.splitRisk],
-                          [stillDeciding, styles.splitNeutral],
-                        ] as const
-                      )
-                        .filter(([count]) => count > 0)
-                        .map(([count, cls]) => (
-                          <span key={cls} className={cls} style={{ flexGrow: count }} />
-                        ))}
-                    </div>
-                  ) : null}
-                  <div className={styles.pillRow}>
-                    <span className={`${styles.pill} ${styles.pillWarn}`}>
-                      <strong>{pipeline?.follow_up_calls ?? 0}</strong> need a follow-up call
+                <div className={styles.heroSideStats}>
+                  <div className={styles.heroStat}>
+                    <span className={styles.heroStatValue}>
+                      {summary ? `${summary.avg_interest_score}%` : "—"}
                     </span>
-                    <span className={`${styles.pill} ${styles.pillRisk}`}>
-                      <strong>{pipeline?.at_risk_calls ?? 0}</strong> may slip away
+                    <span className={styles.heroStatLabel}>Customer interest</span>
+                    <span className={styles.heroMeter}>
+                      <span style={{ width: `${summary?.avg_interest_score ?? 0}%` }} />
                     </span>
-                    <span className={`${styles.pill} ${styles.pillNeutral}`}>
-                      <strong>{stillDeciding}</strong> still deciding
+                  </div>
+                  <div className={styles.heroStat}>
+                    <span className={styles.heroStatValue}>
+                      {summary ? `${summary.avg_conversion_pct}%` : "—"}
+                    </span>
+                    <span className={styles.heroStatLabel}>Chance of closing</span>
+                    <span className={styles.heroMeter}>
+                      <span style={{ width: `${summary?.avg_conversion_pct ?? 0}%` }} />
                     </span>
                   </div>
                 </div>
-              </article>
-
-              <article className={styles.miniCard}>
-                <div>
-                  <p className={styles.cardLabel}>Customer interest</p>
-                  <p className={styles.miniValue}>
-                    {summary ? `${summary.avg_interest_score}%` : "—"}
-                  </p>
-                </div>
-                <div>
-                  <div className={styles.meterTrack}>
-                    <div
-                      className={styles.meterFill}
-                      style={{ width: `${summary?.avg_interest_score ?? 0}%` }}
-                    />
-                  </div>
-                  <p className={styles.miniFoot}>
-                    How keen customers sounded, from {summary?.analyzed_conversations ?? 0}{" "}
-                    reviewed {summary?.analyzed_conversations === 1 ? "call" : "calls"}
-                  </p>
-                </div>
-              </article>
-
-              <article className={`${styles.miniCard} ${styles.orangeCard}`}>
-                <div>
-                  <p className={styles.cardLabel}>Calls made</p>
-                  <p className={styles.miniValue}>{summary?.total_conversations ?? "—"}</p>
-                  <p className={styles.miniFoot}>
-                    {summary?.analyzed_conversations ?? 0} of {summary?.total_conversations ?? 0}{" "}
-                    reviewed by AI
-                  </p>
-                </div>
-                <div>
-                  <p className={styles.miniFoot}>
-                    Average length {formatDuration(summary?.avg_duration_sec ?? null)}
-                  </p>
-                  <Link to="/analytics" className={styles.reportBtn}>
-                    See full report
-                  </Link>
-                </div>
-              </article>
-
-              <article className={styles.miniCard}>
-                <div>
-                  <p className={styles.cardLabel}>Chance of closing</p>
-                  <p className={styles.miniValue}>
-                    {summary ? `${summary.avg_conversion_pct}%` : "—"}
-                  </p>
-                </div>
-                <div>
-                  <div className={styles.bandRow} aria-label="Calls grouped by closing chance">
+              </div>
+              <div className={styles.heroBottom}>
+                {summary && summary.analyzed_conversations > 0 ? (
+                  <div className={styles.splitBar} aria-hidden="true">
                     {(
                       [
-                        ["High", summary?.conversion_bands.likely ?? 0, styles.bandHigh],
-                        ["Medium", summary?.conversion_bands.possible ?? 0, styles.bandMid],
-                        ["Low", summary?.conversion_bands.unlikely ?? 0, styles.bandLow],
+                        [pipeline?.qualified_calls ?? 0, styles.splitGood],
+                        [pipeline?.follow_up_calls ?? 0, styles.splitWarn],
+                        [pipeline?.at_risk_calls ?? 0, styles.splitRisk],
+                        [stillDeciding, styles.splitNeutral],
                       ] as const
-                    ).map(([label, count, cls]) => (
-                      <div key={label} className={styles.band}>
-                        <div
-                          className={`${styles.bandBar} ${cls}`}
-                          style={{ height: `${14 + Math.min(count, 8) * 5}px` }}
-                        />
-                        <span className={styles.bandCount}>{count}</span>
-                        <span className={styles.bandLabel}>{label}</span>
-                      </div>
-                    ))}
+                    )
+                      .filter(([count]) => count > 0)
+                      .map(([count, cls]) => (
+                        <span key={cls} className={cls} style={{ flexGrow: count }} />
+                      ))}
                   </div>
-                  <p className={styles.miniFoot}>How many deals look likely to close</p>
+                ) : null}
+                <div className={styles.pillRow}>
+                  <span className={`${styles.pill} ${styles.pillOnDark}`}>
+                    <i className={styles.dotGood} /> <strong>{pipeline?.qualified_calls ?? 0}</strong>{" "}
+                    strong
+                  </span>
+                  <span className={`${styles.pill} ${styles.pillOnDark}`}>
+                    <i className={styles.dotWarn} /> <strong>{pipeline?.follow_up_calls ?? 0}</strong>{" "}
+                    need a follow-up
+                  </span>
+                  <span className={`${styles.pill} ${styles.pillOnDark}`}>
+                    <i className={styles.dotRisk} /> <strong>{pipeline?.at_risk_calls ?? 0}</strong>{" "}
+                    may slip away
+                  </span>
+                  <span className={`${styles.pill} ${styles.pillOnDark}`}>
+                    <i className={styles.dotNeutral} /> <strong>{stillDeciding}</strong> still
+                    deciding
+                  </span>
                 </div>
-              </article>
+              </div>
             </section>
 
-            <div className={styles.chartRow}>
-              <section className={styles.chartCard} aria-label="Calls over time">
-                <div className={styles.chartHead}>
-                  <div>
-                    <h2 className={styles.chartTitle}>Calls over time</h2>
-                    <p className={styles.chartSub}>
-                      Each bar is one {range === "7d" ? "day" : "week"}
-                    </p>
+            <section className={`${styles.orangeCard} ${styles.spanSide}`} aria-label="Calls made">
+              <div>
+                <p className={styles.orangeLabel}>Calls made</p>
+                <p className={styles.orangeValue}>{summary?.total_conversations ?? "—"}</p>
+                <p className={styles.orangeFoot}>
+                  {summary?.analyzed_conversations ?? 0} of {summary?.total_conversations ?? 0}{" "}
+                  reviewed by AI
+                </p>
+              </div>
+              <div className={styles.orangeStats}>
+                <div>
+                  <span className={styles.orangeStatValue}>
+                    {formatDuration(summary?.avg_duration_sec ?? null)}
+                  </span>
+                  <span className={styles.orangeStatLabel}>Average length</span>
+                </div>
+                <div>
+                  <span className={styles.orangeStatValue}>{summary?.avg_rep_wpm || "—"}</span>
+                  <span className={styles.orangeStatLabel}>Words / minute</span>
+                </div>
+              </div>
+              <Link to="/analytics" className={styles.reportBtn}>
+                See full report
+              </Link>
+            </section>
+
+            {/* ── Row 2: what customers said + volume chart ─────────── */}
+            <section className={`${styles.card} ${styles.spanSide}`} aria-label="What customers told you">
+              <p className={styles.cardLabel}>What customers told you</p>
+              <ul className={styles.signalList}>
+                <li>
+                  <div className={styles.signalTop}>
+                    <span>
+                      <i className={styles.dotGood} /> Positive signs
+                    </span>
+                    <span className={styles.signalValue}>{signals?.buying_signals_total ?? 0}</span>
                   </div>
+                  <div className={styles.signalTrack}>
+                    <div
+                      className={`${styles.signalFill} ${styles.signalFillGood}`}
+                      style={{
+                        width: `${((signals?.buying_signals_total ?? 0) / signalMax) * 100}%`,
+                      }}
+                    />
+                  </div>
+                </li>
+                <li>
+                  <div className={styles.signalTop}>
+                    <span>
+                      <i className={styles.dotRisk} /> Concerns raised
+                    </span>
+                    <span className={styles.signalValue}>{signals?.objections_total ?? 0}</span>
+                  </div>
+                  <div className={styles.signalTrack}>
+                    <div
+                      className={`${styles.signalFill} ${styles.signalFillRisk}`}
+                      style={{ width: `${((signals?.objections_total ?? 0) / signalMax) * 100}%` }}
+                    />
+                  </div>
+                </li>
+              </ul>
+              <p className={styles.cardFoot}>
+                Things customers said that show interest — like asking about price or a site visit —
+                versus doubts they raised.
+              </p>
+            </section>
+
+            <section className={`${styles.card} ${styles.spanHero}`} aria-label="Calls over time">
+              <div className={styles.chartHead}>
+                <div>
+                  <h2 className={styles.chartTitle}>Calls over time</h2>
+                  <p className={styles.chartSub}>Each bar is one {range === "7d" ? "day" : "week"}</p>
+                </div>
+              </div>
+              <div className={styles.plotArea}>
+                <div className={styles.gridLines} aria-hidden="true">
+                  <span data-label={maxVolume} />
+                  <span data-label={Math.round(maxVolume / 2)} />
+                  <span data-label="0" />
                 </div>
                 <div className={styles.plot}>
                   {(summary?.weekly_volume ?? []).map((bucket) => {
@@ -271,7 +321,7 @@ export function DashboardPage() {
                           ) : null}
                           <div
                             className={`${styles.plotBar} ${isPeak ? styles.plotBarHi : ""}`}
-                            style={{ height: `${Math.max((bucket.count / maxVolume) * 100, 3)}%` }}
+                            style={{ height: `${Math.max((bucket.count / maxVolume) * 100, 2)}%` }}
                             title={`${bucket.label}: ${bucket.count} ${bucket.count === 1 ? "call" : "calls"}`}
                           />
                         </div>
@@ -280,69 +330,112 @@ export function DashboardPage() {
                     );
                   })}
                 </div>
-              </section>
+              </div>
+            </section>
 
-              <section className={styles.chartCard} aria-label="How your team talks">
-                <div className={styles.chartHead}>
-                  <div>
-                    <h2 className={styles.chartTitle}>How your team talks on calls</h2>
-                    <p className={styles.chartSub}>Measured from real call recordings</p>
-                  </div>
+            {/* ── Row 3: attention list + coaching ──────────────────── */}
+            <section className={`${styles.card} ${styles.spanHalf}`} aria-label="Needs your attention">
+              <div className={styles.chartHead}>
+                <div>
+                  <h2 className={styles.chartTitle}>Needs your attention</h2>
+                  <p className={styles.chartSub}>Calls where the deal could be won or lost</p>
                 </div>
-                <p className={styles.verdict}>{verdict?.text ?? "—"}</p>
-                <ul className={styles.coachList}>
-                  <li>
-                    <div className={styles.coachTop}>
-                      <span>Rep talking time</span>
-                      <span className={styles.coachValue}>
-                        {summary ? `${summary.avg_rep_talk_pct}%` : "—"}
-                      </span>
-                    </div>
-                    <div className={styles.coachTrack}>
-                      <div className={styles.coachZone} title="Healthy range: 35–55%" />
-                      <div
-                        className={styles.coachFill}
-                        style={{ width: `${summary?.avg_rep_talk_pct ?? 0}%` }}
-                      />
-                    </div>
-                    <p className={styles.coachNote}>{verdict?.note ?? ""}</p>
-                  </li>
-                  <li>
-                    <div className={styles.coachTop}>
-                      <span>Listening score</span>
-                      <span className={styles.coachValue}>
-                        {coach ? coach.listening_index : "—"}
-                        <span className={styles.coachOf}>/100</span>
-                      </span>
-                    </div>
-                    <div className={styles.coachTrack}>
-                      <div
-                        className={styles.coachFill}
-                        style={{ width: `${coach?.listening_index ?? 0}%` }}
-                      />
-                    </div>
-                  </li>
-                  <li>
-                    <div className={styles.coachTop}>
-                      <span>Questions asked per call</span>
-                      <span className={styles.coachValue}>{coach?.avg_rep_questions ?? "—"}</span>
-                    </div>
-                    <div className={styles.coachTrack}>
-                      <div
-                        className={styles.coachFill}
-                        style={{
-                          width: `${Math.min(((coach?.avg_rep_questions ?? 0) / 8) * 100, 100)}%`,
-                        }}
-                      />
-                    </div>
-                    <p className={styles.coachNote}>Aim for 6 or more — questions uncover what the customer wants.</p>
-                  </li>
+                {actionCalls.length > 0 ? (
+                  <span className={styles.countBubble}>{actionCalls.length}</span>
+                ) : null}
+              </div>
+              {actionCalls.length > 0 ? (
+                <ul className={styles.actionList}>
+                  {actionCalls.map((row) => {
+                    const outcome = OUTCOME_LABELS[row.outcome];
+                    return (
+                      <li key={row.id}>
+                        <Link to={`/conversations/${row.id}`} className={styles.actionRow}>
+                          <div>
+                            <span className={styles.actionId}>{row.id.slice(0, 8)}</span>
+                            <span className={styles.actionWhen}>
+                              {formatTimestamp(row.started_at)}
+                            </span>
+                          </div>
+                          <span className={`${styles.pill} ${toneClass(outcome.tone)}`}>
+                            {outcome.text}
+                          </span>
+                        </Link>
+                      </li>
+                    );
+                  })}
                 </ul>
-              </section>
-            </div>
+              ) : (
+                <div className={styles.allClear}>
+                  <span className={styles.allClearMark}>✓</span>
+                  <p>All clear — no calls are waiting on you right now.</p>
+                </div>
+              )}
+            </section>
 
-            <section className={styles.tableCard} aria-label="Recent calls">
-              <div className={styles.tableHead}>
+            <section className={`${styles.card} ${styles.spanHalf}`} aria-label="How your team talks">
+              <div className={styles.chartHead}>
+                <div>
+                  <h2 className={styles.chartTitle}>How your team talks on calls</h2>
+                  <p className={styles.chartSub}>Measured from real call recordings</p>
+                </div>
+              </div>
+              <p className={styles.verdict}>{verdict?.text ?? "—"}</p>
+              <ul className={styles.coachList}>
+                <li>
+                  <div className={styles.coachTop}>
+                    <span>Rep talking time</span>
+                    <span className={styles.coachValue}>
+                      {summary ? `${summary.avg_rep_talk_pct}%` : "—"}
+                    </span>
+                  </div>
+                  <div className={styles.coachTrack}>
+                    <div className={styles.coachZone} title="Healthy range: 35–55%" />
+                    <div
+                      className={styles.coachFill}
+                      style={{ width: `${summary?.avg_rep_talk_pct ?? 0}%` }}
+                    />
+                  </div>
+                  <p className={styles.coachNote}>{verdict?.note ?? ""}</p>
+                </li>
+                <li>
+                  <div className={styles.coachTop}>
+                    <span>Listening score</span>
+                    <span className={styles.coachValue}>
+                      {coach ? coach.listening_index : "—"}
+                      <span className={styles.coachOf}>/100</span>
+                    </span>
+                  </div>
+                  <div className={styles.coachTrack}>
+                    <div
+                      className={styles.coachFill}
+                      style={{ width: `${coach?.listening_index ?? 0}%` }}
+                    />
+                  </div>
+                </li>
+                <li>
+                  <div className={styles.coachTop}>
+                    <span>Questions asked per call</span>
+                    <span className={styles.coachValue}>{coach?.avg_rep_questions ?? "—"}</span>
+                  </div>
+                  <div className={styles.coachTrack}>
+                    <div
+                      className={styles.coachFill}
+                      style={{
+                        width: `${Math.min(((coach?.avg_rep_questions ?? 0) / 8) * 100, 100)}%`,
+                      }}
+                    />
+                  </div>
+                  <p className={styles.coachNote}>
+                    Aim for 6 or more — questions uncover what the customer wants.
+                  </p>
+                </li>
+              </ul>
+            </section>
+
+            {/* ── Row 4: recent calls ───────────────────────────────── */}
+            <section className={`${styles.card} ${styles.spanFull}`} aria-label="Recent calls">
+              <div className={styles.chartHead}>
                 <h2 className={styles.chartTitle}>Recent calls</h2>
                 <Link to="/analytics" className={styles.tableLink}>
                   See all calls
@@ -355,6 +448,7 @@ export function DashboardPage() {
                       <th scope="col">Call</th>
                       <th scope="col">Result</th>
                       <th scope="col">Customer interest</th>
+                      <th scope="col">What they said</th>
                       <th scope="col">Length</th>
                     </tr>
                   </thead>
@@ -370,17 +464,7 @@ export function DashboardPage() {
                             <p className={styles.callWhen}>{formatTimestamp(row.started_at)}</p>
                           </td>
                           <td>
-                            <span
-                              className={`${styles.pill} ${
-                                outcome.tone === "good"
-                                  ? styles.pillGood
-                                  : outcome.tone === "warn"
-                                    ? styles.pillWarn
-                                    : outcome.tone === "risk"
-                                      ? styles.pillRisk
-                                      : styles.pillNeutral
-                              }`}
-                            >
+                            <span className={`${styles.pill} ${toneClass(outcome.tone)}`}>
                               {outcome.text}
                             </span>
                           </td>
@@ -399,6 +483,17 @@ export function DashboardPage() {
                               <span className={styles.faint}>—</span>
                             )}
                           </td>
+                          <td>
+                            {row.outcome === "pending" ? (
+                              <span className={styles.faint}>—</span>
+                            ) : (
+                              <span className={styles.saidCell}>
+                                <i className={styles.dotGood} /> {row.buying_signals} positive
+                                <i className={`${styles.dotRisk} ${styles.saidGap}`} />{" "}
+                                {row.objections} {row.objections === 1 ? "concern" : "concerns"}
+                              </span>
+                            )}
+                          </td>
                           <td className={styles.duration}>{formatDuration(row.duration_sec)}</td>
                         </tr>
                       );
@@ -407,7 +502,7 @@ export function DashboardPage() {
                 </table>
               </div>
             </section>
-          </>
+          </div>
         )}
       </div>
     </div>

@@ -1,4 +1,4 @@
-/* Dashboard — real numbers only, sized up slightly for at-a-glance reading. */
+/* Dashboard — dark hero anchor, 12-col grid, real numbers only. */
 
 .dashMain {
   display: flex;
@@ -19,7 +19,7 @@
 }
 
 .pageEyebrow {
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -29,7 +29,7 @@
 
 .pageTitle {
   font-family: var(--font);
-  font-size: clamp(1.7rem, 3vw, 2.4rem);
+  font-size: clamp(1.6rem, 2.8vw, 2.2rem);
   font-weight: 700;
   letter-spacing: -0.03em;
   line-height: 1.15;
@@ -71,11 +71,24 @@
   margin: 0;
 }
 
-/* ── Shared card bones ──────────────────────────────────────────── */
-.heroCard,
-.miniCard,
-.chartCard,
-.tableCard,
+/* ── Grid ───────────────────────────────────────────────────────── */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 18px;
+}
+
+.spanHero { grid-column: span 8; }
+.spanSide { grid-column: span 4; }
+.spanHalf { grid-column: span 6; }
+.spanFull { grid-column: span 12; }
+
+@media (max-width: 1100px) {
+  .spanHero, .spanSide, .spanHalf { grid-column: span 12; }
+}
+
+/* ── Card bones ─────────────────────────────────────────────────── */
+.card,
 .emptyCard {
   background: var(--surface);
   border: 1px solid var(--sep);
@@ -84,84 +97,143 @@
   padding: 22px;
 }
 
-/* KPI cards anchor content to top AND bottom — no dead middles. */
-.heroCard,
-.miniCard {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  gap: 18px;
-  min-height: 218px;
-}
-
 .cardLabel {
   font-size: 11.5px;
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--text-sub);
+  margin: 0 0 14px;
+}
+
+.cardFoot {
+  font-size: 12.5px;
+  color: var(--text-sub);
+  line-height: 1.5;
+  margin: 16px 0 0;
+}
+
+/* ── Dark hero card ─────────────────────────────────────────────── */
+.darkCard {
+  background: #1f1a15;
+  border: 1px solid #1f1a15;
+  border-radius: var(--r-lg);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 22px;
+  color: #fff;
+}
+
+.darkLabel {
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.65);
   margin: 0 0 10px;
 }
 
-/* ── KPI grid ───────────────────────────────────────────────────── */
-.kpiGrid {
-  display: grid;
-  grid-template-columns: 1.6fr 1fr 1fr 1fr;
-  gap: 18px;
+.heroTop {
+  display: flex;
+  justify-content: space-between;
+  gap: 28px;
+  flex-wrap: wrap;
 }
-
-@media (max-width: 1180px) { .kpiGrid { grid-template-columns: 1fr 1fr; } }
-@media (max-width: 640px)  { .kpiGrid { grid-template-columns: 1fr; } }
 
 .heroValue {
   font-size: 46px;
   font-weight: 700;
   letter-spacing: -0.02em;
-  margin: 0 0 4px;
-  color: var(--text);
-  font-variant-numeric: tabular-nums;
+  margin: 0 0 6px;
   line-height: 1.05;
+  font-variant-numeric: tabular-nums;
 }
 
 .heroUnit {
   font-size: 18px;
   font-weight: 600;
-  color: var(--text-sub);
-  letter-spacing: 0;
+  color: rgba(255, 255, 255, 0.7);
 }
 
 .heroBody {
-  color: var(--text-sub);
+  color: rgba(255, 255, 255, 0.7);
   font-size: 13.5px;
   margin: 0;
-  max-width: 36ch;
+  max-width: 34ch;
 }
 
-/* Lead-status distribution: one thin stacked bar above the pills */
+.heroSideStats {
+  display: flex;
+  gap: 26px;
+  align-items: flex-start;
+}
+
+.heroStat { display: flex; flex-direction: column; gap: 4px; min-width: 128px; }
+
+.heroStatValue {
+  font-size: 26px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.heroStatLabel { font-size: 12px; color: rgba(255, 255, 255, 0.65); }
+
+.heroMeter {
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  overflow: hidden;
+  margin-top: 4px;
+}
+
+.heroMeter span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--accent);
+}
+
+.heroBottom { display: flex; flex-direction: column; gap: 12px; }
+
 .splitBar {
   display: flex;
   gap: 3px;
   height: 10px;
   border-radius: 999px;
   overflow: hidden;
-  margin-bottom: 14px;
 }
 
 .splitBar span { border-radius: 3px; min-width: 8px; }
-.splitGood    { background: var(--green-text); }
-.splitWarn    { background: var(--amber); }
-.splitRisk    { background: var(--red-text); }
-.splitNeutral { background: var(--surface-3); }
+.splitGood    { background: #4cc38a; }
+.splitWarn    { background: #f0b429; }
+.splitRisk    { background: #f2695c; }
+.splitNeutral { background: rgba(255, 255, 255, 0.25); }
 
+/* Status dots reused across cards */
+.dotGood, .dotWarn, .dotRisk, .dotNeutral {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  vertical-align: 1px;
+}
+.dotGood    { background: #4cc38a; }
+.dotWarn    { background: #f0b429; }
+.dotRisk    { background: #f2695c; }
+.dotNeutral { background: rgba(128, 128, 128, 0.5); }
+
+/* ── Pills ──────────────────────────────────────────────────────── */
 .pillRow { display: flex; gap: 8px; flex-wrap: wrap; }
 
 .pill {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  font-size: 13px;
+  gap: 7px;
+  font-size: 12.5px;
   font-weight: 600;
-  padding: 6px 13px;
+  padding: 6px 12px;
   border-radius: 999px;
   white-space: nowrap;
 }
@@ -171,47 +243,53 @@
 .pillWarn    { background: var(--amber-bg); color: var(--amber-text); }
 .pillRisk    { background: var(--red-bg);   color: var(--red-text); }
 .pillNeutral { background: var(--surface-3); color: var(--text-sub); }
+.pillOnDark  { background: rgba(255, 255, 255, 0.1); color: rgba(255, 255, 255, 0.9); }
 
-.miniValue {
-  font-size: 34px;
+/* ── Orange card ────────────────────────────────────────────────── */
+.orangeCard {
+  background: var(--accent);
+  border-radius: var(--r-lg);
+  padding: 22px;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.orangeLabel {
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.85);
+  margin: 0 0 10px;
+}
+
+.orangeValue {
+  font-size: 42px;
   font-weight: 700;
   margin: 0;
-  color: var(--text);
+  line-height: 1.05;
   font-variant-numeric: tabular-nums;
-  line-height: 1.1;
 }
 
-.miniFoot {
-  font-size: 12.5px;
-  color: var(--text-sub);
-  margin: 8px 0 0;
-  line-height: 1.45;
+.orangeFoot { font-size: 12.5px; color: rgba(255, 255, 255, 0.88); margin: 8px 0 0; }
+
+.orangeStats {
+  display: flex;
+  gap: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.25);
+  padding-top: 14px;
 }
 
-.meterTrack {
-  height: 9px;
-  border-radius: 999px;
-  background: var(--surface-3);
-  margin-top: 14px;
-  overflow: hidden;
-}
-
-.meterFill {
-  height: 100%;
-  border-radius: 999px;
-  background: var(--accent);
-}
-
-/* Orange highlight card (kept from the original design) */
-.orangeCard { background: var(--accent); border-color: var(--accent); }
-.orangeCard .cardLabel { color: rgba(255, 255, 255, 0.85); }
-.orangeCard .miniValue { color: #fff; }
-.orangeCard .miniFoot  { color: rgba(255, 255, 255, 0.88); }
+.orangeStats > div { display: flex; flex-direction: column; gap: 2px; }
+.orangeStatValue { font-size: 19px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.orangeStatLabel { font-size: 11.5px; color: rgba(255, 255, 255, 0.8); }
 
 .reportBtn {
   display: block;
   text-align: center;
-  margin-top: 10px;
   background: #fff;
   color: var(--accent);
   font-size: 12.5px;
@@ -223,35 +301,103 @@
   text-decoration: none;
 }
 
-/* Closing-chance bands */
-.bandRow { display: flex; gap: 12px; margin-top: 14px; align-items: flex-end; }
-.band { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
-.bandBar { width: 100%; border-radius: 6px 6px 2px 2px; }
-.bandHigh { background: var(--accent); }
-.bandMid  { background: var(--accent); opacity: 0.55; }
-.bandLow  { background: var(--accent); opacity: 0.25; }
-.bandCount { font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--text); }
-.bandLabel { font-size: 11px; color: var(--text-sub); }
-
-/* ── Chart row ──────────────────────────────────────────────────── */
-.chartRow {
-  display: grid;
-  grid-template-columns: 1.5fr 1fr;
+/* ── Signals card ───────────────────────────────────────────────── */
+.signalList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
   gap: 18px;
 }
 
-@media (max-width: 1100px) { .chartRow { grid-template-columns: 1fr; } }
+.signalTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+  color: var(--text);
+  margin-bottom: 8px;
+}
 
-.chartHead { display: flex; justify-content: space-between; gap: 12px; }
-.chartTitle { font-size: 18px; font-weight: 700; margin: 0; color: var(--text); }
-.chartSub { font-size: 13px; color: var(--text-sub); margin: 4px 0 0; }
+.signalTop i { margin-right: 4px; }
+
+.signalValue {
+  font-size: 22px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.signalTrack {
+  height: 9px;
+  border-radius: 999px;
+  background: var(--surface-3);
+  overflow: hidden;
+}
+
+.signalFill { height: 100%; border-radius: 999px; }
+.signalFillGood { background: #4cc38a; }
+.signalFillRisk { background: #f2695c; }
+
+/* ── Chart card ─────────────────────────────────────────────────── */
+.chartHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.chartTitle { font-size: 17px; font-weight: 700; margin: 0; color: var(--text); }
+.chartSub { font-size: 12.5px; color: var(--text-sub); margin: 4px 0 0; }
+
+.countBubble {
+  background: var(--amber-bg);
+  color: var(--amber-text);
+  font-size: 13px;
+  font-weight: 700;
+  min-width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 8px;
+}
+
+.plotArea { position: relative; margin-top: 22px; }
+
+.gridLines {
+  position: absolute;
+  inset: 0 0 26px 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  pointer-events: none;
+}
+
+.gridLines span {
+  border-top: 1px dashed var(--sep);
+  position: relative;
+}
+
+.gridLines span::before {
+  content: attr(data-label);
+  position: absolute;
+  right: 0;
+  top: -8px;
+  font-size: 10.5px;
+  color: var(--text-faint);
+  background: var(--surface);
+  padding-left: 6px;
+}
 
 .plot {
   display: flex;
   align-items: flex-end;
-  gap: 14px;
-  height: 210px;
-  margin-top: 26px;
+  gap: 12px;
+  height: 200px;
+  position: relative;
 }
 
 .plotCol {
@@ -267,7 +413,7 @@
 
 .plotBarWrap {
   width: 100%;
-  max-width: 48px;
+  max-width: 46px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -286,41 +432,100 @@
 
 .plotTag {
   position: absolute;
-  top: -30px;
+  top: -28px;
   left: 50%;
   transform: translateX(-50%);
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 700;
   color: var(--accent);
   background: var(--accent-dim);
   border-radius: 7px;
-  padding: 4px 9px;
+  padding: 3px 8px;
   white-space: nowrap;
 }
 
-.plotDay { font-size: 12px; color: var(--text-sub); font-weight: 600; }
+.plotDay { font-size: 11.5px; color: var(--text-sub); font-weight: 600; }
 
-/* Coaching card */
+/* ── Attention list ─────────────────────────────────────────────── */
+.actionList {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.actionRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 10px;
+  border-radius: var(--r);
+  text-decoration: none;
+  border-bottom: 1px solid var(--sep);
+  transition: background var(--t) var(--ease);
+}
+
+.actionList li:last-child .actionRow { border-bottom: 0; }
+.actionRow:hover { background: var(--surface-2); }
+
+.actionId {
+  color: var(--accent);
+  font-weight: 700;
+  font-size: 14px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.actionWhen { display: block; color: var(--text-sub); font-size: 12px; margin-top: 3px; }
+
+.allClear {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 18px;
+  color: var(--text-sub);
+  font-size: 14px;
+}
+
+.allClearMark {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--green-bg);
+  color: var(--green-text);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.allClear p { margin: 0; }
+
+/* ── Coaching card ──────────────────────────────────────────────── */
 .verdict {
-  font-size: 26px;
+  font-size: 23px;
   font-weight: 700;
   color: var(--text);
-  margin: 16px 0 0;
+  margin: 12px 0 0;
 }
 
 .coachList {
   list-style: none;
-  margin: 20px 0 0;
+  margin: 18px 0 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 18px;
 }
 
 .coachTop {
   display: flex;
   justify-content: space-between;
-  font-size: 14px;
+  font-size: 13.5px;
   color: var(--text);
   margin-bottom: 8px;
 }
@@ -342,7 +547,6 @@
   background: var(--accent);
 }
 
-/* Healthy talking range 35–55%, marked on the track */
 .coachZone {
   position: absolute;
   top: -3px;
@@ -354,16 +558,9 @@
   opacity: 0.5;
 }
 
-.coachNote { font-size: 12.5px; color: var(--text-sub); margin: 7px 0 0; }
+.coachNote { font-size: 12px; color: var(--text-sub); margin: 7px 0 0; }
 
-/* ── Recent calls table ─────────────────────────────────────────── */
-.tableHead {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 6px;
-}
-
+/* ── Table ──────────────────────────────────────────────────────── */
 .tableLink {
   font-size: 12px;
   font-weight: 700;
@@ -378,7 +575,7 @@
 .table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 14.5px;
+  font-size: 14px;
 }
 
 .table th {
@@ -388,12 +585,12 @@
   text-transform: uppercase;
   color: var(--text-sub);
   font-weight: 700;
-  padding: 13px 14px;
+  padding: 12px 14px;
   border-bottom: 1px solid var(--sep);
 }
 
 .table td {
-  padding: 15px 14px;
+  padding: 14px;
   border-bottom: 1px solid var(--sep);
   color: var(--text);
   font-variant-numeric: tabular-nums;
@@ -408,9 +605,9 @@
   text-underline-offset: 3px;
 }
 
-.callWhen { color: var(--text-sub); font-size: 12.5px; margin: 3px 0 0; }
+.callWhen { color: var(--text-sub); font-size: 12px; margin: 3px 0 0; }
 
-.interestCell { display: flex; align-items: center; gap: 10px; min-width: 140px; }
+.interestCell { display: flex; align-items: center; gap: 10px; min-width: 130px; }
 
 .interestTrack {
   flex: 1;
@@ -422,10 +619,13 @@
 
 .interestFill { height: 100%; background: var(--accent); border-radius: 999px; }
 
+.saidCell { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; white-space: nowrap; }
+.saidGap { margin-left: 10px; }
+
 .faint { color: var(--text-faint); }
 .duration { white-space: nowrap; }
 
-/* ── Empty state (no fake people — an honest invitation) ────────── */
+/* ── Empty state ────────────────────────────────────────────────── */
 .emptyCard {
   text-align: center;
   padding: 56px 24px;
