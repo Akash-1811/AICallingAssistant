@@ -33,8 +33,20 @@ def warm_rag_stack_sync() -> None:
     try:
         pipeline = get_rag_pipeline()
 
-        # Full retrieve path: embed, Qdrant, hybrid, rerank when eligible.
-        chunks = pipeline.retriever.retrieve(_WARMUP_RETRIEVAL_QUERY)
+        # A fresh deployment has no knowledge base yet — that's a setup task,
+        # not a crash. Warn clearly and still warm the models.
+        if not pipeline.retriever.qdrant.client.collection_exists(settings.QDRANT_COLLECTION):
+            logger.warning(
+                "Qdrant collection %r not found — the knowledge base is empty and "
+                "suggestions will be ungrounded. Ingest it with: "
+                "docker compose --profile ingest run --rm ingest",
+                settings.QDRANT_COLLECTION,
+            )
+            pipeline.retriever.embedder.embed(_WARMUP_RETRIEVAL_QUERY)
+            chunks = []
+        else:
+            # Full retrieve path: embed, Qdrant, hybrid, rerank when eligible.
+            chunks = pipeline.retriever.retrieve(_WARMUP_RETRIEVAL_QUERY)
         qwords = len(_WARMUP_RETRIEVAL_QUERY.split())
 
         # retrieve() skips reranker when there are 0 chunks or exactly 1 chunk — but we still
