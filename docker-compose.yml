@@ -6,7 +6,7 @@
 # UI:  http://localhost:5173
 # API: http://localhost:8000
 #
-# Ingest (one-shot):  docker compose --profile ingest run --rm ingest
+# Seed demo data (one-shot):  docker compose --profile seed run --rm seed
 
 services:
   frontend:
@@ -97,21 +97,21 @@ services:
       retries: 6
       start_period: 40s
 
-  ingest:
+  seed:
     profiles:
-      - ingest
+      - seed
     build:
       context: .
       dockerfile: Dockerfile
     image: ai-calling-assistant-api:latest
-    container_name: ai_ingest
+    container_name: ai_seed
     environment:
       QDRANT_URL: http://qdrant:6333
       HF_HOME: /home/appuser/.cache/huggingface
     volumes:
       - ./app/data:/app/app/data:ro
       - hf_model_cache:/home/appuser/.cache/huggingface
-    command: ["python", "-m", "app.scripts.ingest_data"]
+    command: ["python", "-m", "app.scripts.seed_demo_data"]
     depends_on:
       qdrant:
         condition: service_healthy

@@ -85,7 +85,7 @@ class Settings(BaseSettings):
 
     # Multilingual model: Hindi/Marathi/code-switched queries embed directly against
     # the English KB (shared vector space) — no translation call in the hot path.
-    # Changing this model requires reindexing Qdrant (python -m app.scripts.ingest_data).
+    # Changing this model requires reindexing Qdrant (python -m app.scripts.seed_demo_data).
     EMBEDDING_MODEL: str = "paraphrase-multilingual-MiniLM-L12-v2"
     # Vector width of EMBEDDING_MODEL — must change together with it (and reindex).
     EMBEDDING_DIM: int = 384

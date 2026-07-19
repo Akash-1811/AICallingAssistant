@@ -30,7 +30,7 @@ docker run -p 6333:6333 qdrant/qdrant
 **Ingest knowledge** (from project root, with Qdrant up):
 
 ```bash
-python -m app.scripts.ingest_data
+python -m app.scripts.seed_demo_data
 ```
 
 ---
@@ -127,7 +127,7 @@ The `ingest` service does **not** load your host `.env` for `QDRANT_URL` (that o
 Or locally with Qdrant running on `localhost:6333`:
 
 ```bash
-python -m app.scripts.ingest_data
+python -m app.scripts.seed_demo_data
 ```
 
 **Default stack** uses Vite on **:5173** and API **`--reload`** with the repo bind-mounted (`docker compose up -d --build`).

@@ -39,7 +39,7 @@ def warm_rag_stack_sync() -> None:
             logger.warning(
                 "Qdrant collection %r not found — the knowledge base is empty and "
                 "suggestions will be ungrounded. Ingest it with: "
-                "docker compose --profile ingest run --rm ingest",
+                "docker compose --profile seed run --rm seed",
                 settings.QDRANT_COLLECTION,
             )
             pipeline.retriever.embedder.embed(_WARMUP_RETRIEVAL_QUERY)

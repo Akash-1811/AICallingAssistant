@@ -1,5 +1,9 @@
 """
-Seed the Qdrant knowledge base with `app/data/raymond_realty.json`.
+Seed the Qdrant knowledge base with DEMO data (`app/data/raymond_realty.json`).
+
+Developer tooling only — real data enters through the Knowledge Base page in
+the app. This script exists for: fresh-install demos, the retrieval-quality
+eval (eval_rag.py tests against these facts), and full reindexes.
 
 SAFE BY DEFAULT: seed points are upserted alongside anything users uploaded
 through the Knowledge Base page — uploads are never touched.
@@ -9,10 +13,10 @@ needed after changing EMBEDDING_MODEL / EMBEDDING_DIM; afterwards, re-embed
 user uploads with the "Re-Sync All" button on the Knowledge Base page.
 
 Local (Qdrant on localhost:6333):
-  python -m app.scripts.ingest_data [filename] [--recreate]
+  python -m app.scripts.seed_demo_data [filename] [--recreate]
 
 Docker (Qdrant in compose):
-  docker compose --profile ingest run --rm ingest
+  docker compose --profile seed run --rm seed
 """
 
 from __future__ import annotations
