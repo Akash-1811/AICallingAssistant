@@ -13,10 +13,10 @@ Example::
 from __future__ import annotations
 
 import asyncio
+import uuid
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
-import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import FileResponse

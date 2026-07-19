@@ -64,7 +64,13 @@ function toneClass(tone: "good" | "warn" | "risk" | "neutral"): string {
   return styles.pillNeutral;
 }
 
-type ModalState = { title: string; subtitle: string; rows: AnalyticsCallRow[] } | null;
+type ModalState = {
+  title: string;
+  subtitle: string;
+  rows: AnalyticsCallRow[];
+  /** When set, rows show that signal's count + the customer's quoted words. */
+  kind?: "positive" | "concerns";
+} | null;
 
 /** Modal listing a set of calls; every row links to that call's full review. */
 function CallListModal({
@@ -112,23 +118,49 @@ function CallListModal({
           <ul className={styles.modalList}>
             {modal.rows.map((row) => {
               const outcome = OUTCOME_LABELS[row.outcome];
+              const quotes =
+                modal.kind === "positive"
+                  ? row.interest_examples
+                  : modal.kind === "concerns"
+                    ? row.concern_examples
+                    : [];
               return (
                 <li key={row.id}>
                   <Link to={`/conversations/${row.id}`} className={styles.modalRow}>
-                    <div className={styles.modalRowMain}>
-                      <span className={styles.callId}>{row.id.slice(0, 8)}</span>
-                      <span className={styles.modalWhen}>{formatTimestamp(row.started_at)}</span>
+                    <div className={styles.modalRowTop}>
+                      <div className={styles.modalRowMain}>
+                        <span className={styles.callId}>{row.id.slice(0, 8)}</span>
+                        <span className={styles.modalWhen}>{formatTimestamp(row.started_at)}</span>
+                      </div>
+                      {modal.kind === "positive" ? (
+                        <span className={`${styles.pill} ${styles.pillGood}`}>
+                          {row.buying_signals} positive{" "}
+                          {row.buying_signals === 1 ? "sign" : "signs"}
+                        </span>
+                      ) : modal.kind === "concerns" ? (
+                        <span className={`${styles.pill} ${styles.pillRisk}`}>
+                          {row.objections} {row.objections === 1 ? "concern" : "concerns"}
+                        </span>
+                      ) : (
+                        <span className={`${styles.pill} ${toneClass(outcome.tone)}`}>
+                          {outcome.text}
+                        </span>
+                      )}
+                      <span className={styles.modalMeta}>
+                        {row.interest_score != null ? `${row.interest_score}% interest` : "—"}
+                      </span>
+                      <span className={styles.modalMeta}>{formatDuration(row.duration_sec)}</span>
+                      <span className={styles.modalChevron} aria-hidden="true">
+                        ›
+                      </span>
                     </div>
-                    <span className={`${styles.pill} ${toneClass(outcome.tone)}`}>
-                      {outcome.text}
-                    </span>
-                    <span className={styles.modalMeta}>
-                      {row.interest_score != null ? `${row.interest_score}% interest` : "—"}
-                    </span>
-                    <span className={styles.modalMeta}>{formatDuration(row.duration_sec)}</span>
-                    <span className={styles.modalChevron} aria-hidden="true">
-                      ›
-                    </span>
+                    {quotes.length > 0 ? (
+                      <ul className={styles.quoteList}>
+                        {quotes.map((quote) => (
+                          <li key={quote}>{quote}</li>
+                        ))}
+                      </ul>
+                    ) : null}
                   </Link>
                 </li>
               );
@@ -295,17 +327,23 @@ export function DashboardPage() {
 
   const openSignalModal = useCallback(
     (kind: "positive" | "concerns") => {
-      const analyzed = calls.filter((c) => c.outcome !== "pending");
-      const sorted = [...analyzed].sort((a, b) =>
-        kind === "positive" ? b.buying_signals - a.buying_signals : b.objections - a.objections
-      );
+      // Only calls that actually contain this signal, strongest first —
+      // clicking "12 positive signs" must show exactly where those 12 live.
+      const relevant = calls
+        .filter((c) =>
+          kind === "positive" ? c.buying_signals > 0 : c.objections > 0
+        )
+        .sort((a, b) =>
+          kind === "positive" ? b.buying_signals - a.buying_signals : b.objections - a.objections
+        );
       setModal({
-        title: kind === "positive" ? "Calls with positive signs" : "Calls where concerns came up",
+        kind,
+        title: kind === "positive" ? "Positive signs from customers" : "Concerns customers raised",
         subtitle:
           kind === "positive"
-            ? "Sorted by how many positive signs the customer gave"
-            : "Sorted by how many concerns the customer raised",
-        rows: sorted,
+            ? `${relevant.length} ${relevant.length === 1 ? "call" : "calls"} where the customer showed real interest — with their own words`
+            : `${relevant.length} ${relevant.length === 1 ? "call" : "calls"} where the customer pushed back — with their own words`,
+        rows: relevant,
       });
     },
     [calls]
