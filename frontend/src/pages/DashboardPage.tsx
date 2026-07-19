@@ -136,80 +136,115 @@ export function DashboardPage() {
           <>
             <section className={styles.kpiGrid} aria-label="Key numbers">
               <article className={styles.heroCard}>
-                <p className={styles.cardLabel}>Where your leads stand</p>
-                <p className={styles.heroValue}>
-                  {pipeline?.qualified_calls ?? "—"}
-                  <span className={styles.heroUnit}> strong leads</span>
-                </p>
-                <p className={styles.heroBody}>
-                  Counted from what each customer actually said on the call.
-                </p>
-                <div className={styles.pillRow}>
-                  <span className={`${styles.pill} ${styles.pillWarn}`}>
-                    <strong>{pipeline?.follow_up_calls ?? 0}</strong> need a follow-up call
-                  </span>
-                  <span className={`${styles.pill} ${styles.pillRisk}`}>
-                    <strong>{pipeline?.at_risk_calls ?? 0}</strong> may slip away
-                  </span>
-                  <span className={`${styles.pill} ${styles.pillNeutral}`}>
-                    <strong>{stillDeciding}</strong> still deciding
-                  </span>
+                <div>
+                  <p className={styles.cardLabel}>Where your leads stand</p>
+                  <p className={styles.heroValue}>
+                    {pipeline?.qualified_calls ?? "—"}
+                    <span className={styles.heroUnit}> strong leads</span>
+                  </p>
+                  <p className={styles.heroBody}>
+                    Counted from what each customer actually said on the call.
+                  </p>
+                </div>
+                <div>
+                  {summary && summary.analyzed_conversations > 0 ? (
+                    <div className={styles.splitBar} aria-hidden="true">
+                      {(
+                        [
+                          [pipeline?.qualified_calls ?? 0, styles.splitGood],
+                          [pipeline?.follow_up_calls ?? 0, styles.splitWarn],
+                          [pipeline?.at_risk_calls ?? 0, styles.splitRisk],
+                          [stillDeciding, styles.splitNeutral],
+                        ] as const
+                      )
+                        .filter(([count]) => count > 0)
+                        .map(([count, cls]) => (
+                          <span key={cls} className={cls} style={{ flexGrow: count }} />
+                        ))}
+                    </div>
+                  ) : null}
+                  <div className={styles.pillRow}>
+                    <span className={`${styles.pill} ${styles.pillWarn}`}>
+                      <strong>{pipeline?.follow_up_calls ?? 0}</strong> need a follow-up call
+                    </span>
+                    <span className={`${styles.pill} ${styles.pillRisk}`}>
+                      <strong>{pipeline?.at_risk_calls ?? 0}</strong> may slip away
+                    </span>
+                    <span className={`${styles.pill} ${styles.pillNeutral}`}>
+                      <strong>{stillDeciding}</strong> still deciding
+                    </span>
+                  </div>
                 </div>
               </article>
 
               <article className={styles.miniCard}>
-                <p className={styles.cardLabel}>Customer interest</p>
-                <p className={styles.miniValue}>
-                  {summary ? `${summary.avg_interest_score}%` : "—"}
-                </p>
-                <div className={styles.meterTrack}>
-                  <div
-                    className={styles.meterFill}
-                    style={{ width: `${summary?.avg_interest_score ?? 0}%` }}
-                  />
+                <div>
+                  <p className={styles.cardLabel}>Customer interest</p>
+                  <p className={styles.miniValue}>
+                    {summary ? `${summary.avg_interest_score}%` : "—"}
+                  </p>
                 </div>
-                <p className={styles.miniFoot}>
-                  How keen customers sounded, from {summary?.analyzed_conversations ?? 0} reviewed{" "}
-                  {summary?.analyzed_conversations === 1 ? "call" : "calls"}
-                </p>
+                <div>
+                  <div className={styles.meterTrack}>
+                    <div
+                      className={styles.meterFill}
+                      style={{ width: `${summary?.avg_interest_score ?? 0}%` }}
+                    />
+                  </div>
+                  <p className={styles.miniFoot}>
+                    How keen customers sounded, from {summary?.analyzed_conversations ?? 0}{" "}
+                    reviewed {summary?.analyzed_conversations === 1 ? "call" : "calls"}
+                  </p>
+                </div>
               </article>
 
               <article className={`${styles.miniCard} ${styles.orangeCard}`}>
-                <p className={styles.cardLabel}>Calls made</p>
-                <p className={styles.miniValue}>{summary?.total_conversations ?? "—"}</p>
-                <p className={styles.miniFoot}>
-                  {summary?.analyzed_conversations ?? 0} of {summary?.total_conversations ?? 0} reviewed
-                  by AI
-                </p>
-                <Link to="/analytics" className={styles.reportBtn}>
-                  See full report
-                </Link>
+                <div>
+                  <p className={styles.cardLabel}>Calls made</p>
+                  <p className={styles.miniValue}>{summary?.total_conversations ?? "—"}</p>
+                  <p className={styles.miniFoot}>
+                    {summary?.analyzed_conversations ?? 0} of {summary?.total_conversations ?? 0}{" "}
+                    reviewed by AI
+                  </p>
+                </div>
+                <div>
+                  <p className={styles.miniFoot}>
+                    Average length {formatDuration(summary?.avg_duration_sec ?? null)}
+                  </p>
+                  <Link to="/analytics" className={styles.reportBtn}>
+                    See full report
+                  </Link>
+                </div>
               </article>
 
               <article className={styles.miniCard}>
-                <p className={styles.cardLabel}>Chance of closing</p>
-                <p className={styles.miniValue}>
-                  {summary ? `${summary.avg_conversion_pct}%` : "—"}
-                </p>
-                <div className={styles.bandRow} aria-label="Calls grouped by closing chance">
-                  {(
-                    [
-                      ["High", summary?.conversion_bands.likely ?? 0, styles.bandHigh],
-                      ["Medium", summary?.conversion_bands.possible ?? 0, styles.bandMid],
-                      ["Low", summary?.conversion_bands.unlikely ?? 0, styles.bandLow],
-                    ] as const
-                  ).map(([label, count, cls]) => (
-                    <div key={label} className={styles.band}>
-                      <div
-                        className={`${styles.bandBar} ${cls}`}
-                        style={{ height: `${12 + Math.min(count, 8) * 5}px` }}
-                      />
-                      <span className={styles.bandCount}>{count}</span>
-                      <span className={styles.bandLabel}>{label}</span>
-                    </div>
-                  ))}
+                <div>
+                  <p className={styles.cardLabel}>Chance of closing</p>
+                  <p className={styles.miniValue}>
+                    {summary ? `${summary.avg_conversion_pct}%` : "—"}
+                  </p>
                 </div>
-                <p className={styles.miniFoot}>How many deals look likely to close</p>
+                <div>
+                  <div className={styles.bandRow} aria-label="Calls grouped by closing chance">
+                    {(
+                      [
+                        ["High", summary?.conversion_bands.likely ?? 0, styles.bandHigh],
+                        ["Medium", summary?.conversion_bands.possible ?? 0, styles.bandMid],
+                        ["Low", summary?.conversion_bands.unlikely ?? 0, styles.bandLow],
+                      ] as const
+                    ).map(([label, count, cls]) => (
+                      <div key={label} className={styles.band}>
+                        <div
+                          className={`${styles.bandBar} ${cls}`}
+                          style={{ height: `${14 + Math.min(count, 8) * 5}px` }}
+                        />
+                        <span className={styles.bandCount}>{count}</span>
+                        <span className={styles.bandLabel}>{label}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <p className={styles.miniFoot}>How many deals look likely to close</p>
+                </div>
               </article>
             </section>
 

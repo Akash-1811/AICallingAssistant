@@ -81,7 +81,17 @@
   border: 1px solid var(--sep);
   border-radius: var(--r-lg);
   box-shadow: var(--shadow-sm);
-  padding: 24px;
+  padding: 22px;
+}
+
+/* KPI cards anchor content to top AND bottom — no dead middles. */
+.heroCard,
+.miniCard {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 18px;
+  min-height: 218px;
 }
 
 .cardLabel {
@@ -104,16 +114,17 @@
 @media (max-width: 640px)  { .kpiGrid { grid-template-columns: 1fr; } }
 
 .heroValue {
-  font-size: 52px;
+  font-size: 46px;
   font-weight: 700;
   letter-spacing: -0.02em;
   margin: 0 0 4px;
   color: var(--text);
   font-variant-numeric: tabular-nums;
+  line-height: 1.05;
 }
 
 .heroUnit {
-  font-size: 19px;
+  font-size: 18px;
   font-weight: 600;
   color: var(--text-sub);
   letter-spacing: 0;
@@ -121,12 +132,28 @@
 
 .heroBody {
   color: var(--text-sub);
-  font-size: 14px;
-  margin: 0 0 18px;
+  font-size: 13.5px;
+  margin: 0;
   max-width: 36ch;
 }
 
-.pillRow { display: flex; gap: 10px; flex-wrap: wrap; }
+/* Lead-status distribution: one thin stacked bar above the pills */
+.splitBar {
+  display: flex;
+  gap: 3px;
+  height: 10px;
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+
+.splitBar span { border-radius: 3px; min-width: 8px; }
+.splitGood    { background: var(--green-text); }
+.splitWarn    { background: var(--amber); }
+.splitRisk    { background: var(--red-text); }
+.splitNeutral { background: var(--surface-3); }
+
+.pillRow { display: flex; gap: 8px; flex-wrap: wrap; }
 
 .pill {
   display: inline-flex;
@@ -146,17 +173,19 @@
 .pillNeutral { background: var(--surface-3); color: var(--text-sub); }
 
 .miniValue {
-  font-size: 36px;
+  font-size: 34px;
   font-weight: 700;
   margin: 0;
   color: var(--text);
   font-variant-numeric: tabular-nums;
+  line-height: 1.1;
 }
 
 .miniFoot {
-  font-size: 13px;
+  font-size: 12.5px;
   color: var(--text-sub);
-  margin: 10px 0 0;
+  margin: 8px 0 0;
+  line-height: 1.45;
 }
 
 .meterTrack {
@@ -177,12 +206,12 @@
 .orangeCard { background: var(--accent); border-color: var(--accent); }
 .orangeCard .cardLabel { color: rgba(255, 255, 255, 0.85); }
 .orangeCard .miniValue { color: #fff; }
-.orangeCard .miniFoot  { color: rgba(255, 255, 255, 0.85); }
+.orangeCard .miniFoot  { color: rgba(255, 255, 255, 0.88); }
 
 .reportBtn {
   display: block;
   text-align: center;
-  margin-top: 16px;
+  margin-top: 10px;
   background: #fff;
   color: var(--accent);
   font-size: 12.5px;
