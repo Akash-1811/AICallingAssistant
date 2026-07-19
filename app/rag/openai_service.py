@@ -6,13 +6,15 @@ OpenAI LLM service — mirrors ``GeminiService``:
 """
 
 import concurrent.futures
-from typing import Any, Dict, Iterator, List, Optional
+from collections.abc import Iterator
+from typing import Any
 
 from openai import OpenAI
 
 from app.core.config import settings
 from app.core.logging import get_logger
 from app.core.telemetry import get_tracer
+from app.rag.gemini_service import format_numbered_context
 from app.rag.models import RetrievedChunk
 from app.rag.prompts import (
     build_grounded_answer_prompt,
@@ -20,7 +22,6 @@ from app.rag.prompts import (
     build_no_context_prompt,
     empty_retrieval_message,
 )
-from app.rag.gemini_service import format_numbered_context
 
 logger = get_logger(__name__)
 
@@ -29,9 +30,9 @@ _GENERIC_FAILURE = "I could not generate an answer right now. Please try again i
 
 class OpenAIService:
 
-    def __init__(self, *, model_name: Optional[str] = None):
+    def __init__(self, *, model_name: str | None = None):
         self._model_name = model_name or settings.OPENAI_MODEL
-        self._client: Optional[OpenAI] = None
+        self._client: OpenAI | None = None
         if settings.OPENAI_API_KEY:
             self._client = OpenAI(api_key=settings.OPENAI_API_KEY)
         self._executor = concurrent.futures.ThreadPoolExecutor(
@@ -44,9 +45,9 @@ class OpenAIService:
     def stream_live(
         self,
         question: str,
-        chunks: List[RetrievedChunk],
+        chunks: list[RetrievedChunk],
         *,
-        conversation_context: Optional[Dict[str, Any]] = None,
+        conversation_context: dict[str, Any] | None = None,
     ) -> Iterator[str]:
         """
         Stream the raw intent-tagged response for one live turn. The first line
@@ -98,9 +99,9 @@ class OpenAIService:
     def generate_answer(
         self,
         query: str,
-        chunks: List[RetrievedChunk],
+        chunks: list[RetrievedChunk],
         *,
-        conversation_context: Optional[Dict[str, Any]] = None,
+        conversation_context: dict[str, Any] | None = None,
     ) -> str:
         if self._client is None:
             return "Configuration error: OPENAI_API_KEY is not set."

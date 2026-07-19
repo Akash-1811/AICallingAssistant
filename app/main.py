@@ -9,21 +9,23 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.health import router as health_router
 import app.api.v1.auth  # noqa: F401 — register User model before create_all
+from app.api.health import router as health_router
 from app.api.v1.auth import router as auth_router
-from app.api.v1.conversations import analytics_router, router as conversations_router
+from app.api.v1.conversations import analytics_router
+from app.api.v1.conversations import router as conversations_router
 from app.api.v1.knowledge import router as knowledge_router
 from app.api.v1.query import router as query_router
 from app.api.websocket.realtime import router as realtime_router
 from app.core.config import settings, validate_production_settings
 from app.core.telemetry import setup_telemetry
 from app.core.warmup import warm_rag_stack_sync
-from app.storage.call_store import close_database, init_database
-from app.rag.answer_cache import close_answer_cache
 from app.live.conversation_manager import (
     conversation_manager,
 )
+from app.rag.answer_cache import close_answer_cache
+from app.storage.call_store import close_database, init_database
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

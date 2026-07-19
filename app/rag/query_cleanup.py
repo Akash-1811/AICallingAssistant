@@ -6,7 +6,6 @@ No extra LLM calls — keeps latency low.
 from __future__ import annotations
 
 import re
-from typing import FrozenSet, Optional
 
 from app.core.config import settings
 
@@ -50,7 +49,7 @@ def normalize_live_query(text: str) -> str:
 def build_retrieval_query(
     query: str,
     *,
-    previous_query: Optional[str] = None,
+    previous_query: str | None = None,
 ) -> str:
     """Enrich vague follow-ups so embeddings match the right KB passages."""
     q = normalize_live_query(query)
@@ -96,7 +95,7 @@ def _token_jaccard(a_norm: str, b_norm: str) -> float:
     return inter / union if union else 0.0
 
 
-def queries_are_near_duplicate(new_query: str, previous_query: Optional[str]) -> bool:
+def queries_are_near_duplicate(new_query: str, previous_query: str | None) -> bool:
     """
     True when the new turn is essentially the same question as the last one
     (fast path: skip retrieval + LLM).
@@ -130,7 +129,7 @@ _BHK_PATTERNS: tuple[tuple[str, str], ...] = (
 )
 
 
-def config_slots(text: str) -> FrozenSet[str]:
+def config_slots(text: str) -> frozenset[str]:
     """Extract BHK configuration mentions from arbitrary query text."""
     s = text.strip().lower()
     s = re.sub(r"\s+", " ", s)
@@ -143,7 +142,7 @@ def config_slots(text: str) -> FrozenSet[str]:
     return frozenset(found)
 
 
-def semantic_cache_compatible(new_norm: str, cached_norm: Optional[str]) -> bool:
+def semantic_cache_compatible(new_norm: str, cached_norm: str | None) -> bool:
     """
     Whether a semantic cache entry keyed by `cached_norm` may serve `new_norm`.
 

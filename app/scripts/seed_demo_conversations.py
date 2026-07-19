@@ -13,12 +13,16 @@ from __future__ import annotations
 
 import argparse
 import asyncio
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from sqlalchemy import delete, select
 
+from app.analysis.post_call_analysis import run_post_call_analysis
+from app.analysis.speech_metrics import compute_speech_metrics
 from app.api.v1.auth import User
+from app.scripts.demo_analysis import build_demo_analysis
+from app.scripts.demo_transcripts import SCENARIO_IDS, build_scenarios
 from app.storage.call_store import (
     Conversation,
     ConversationAnalysis,
@@ -27,10 +31,6 @@ from app.storage.call_store import (
     get_db,
     init_database,
 )
-from app.scripts.demo_analysis import build_demo_analysis
-from app.scripts.demo_transcripts import SCENARIO_IDS, build_scenarios
-from app.analysis.post_call_analysis import run_post_call_analysis
-from app.analysis.speech_metrics import compute_speech_metrics
 
 LEAD_SPEAKER_ID = 1
 EMPTY_CONVERSATION_ID = "f0ed52fc-f3e4-4112-a6dd-8c7818cb0005"
@@ -65,7 +65,7 @@ async def upsert_transcript(session, rep_name: str, scenario: dict[str, Any]) ->
     suggestions = scenario.get("suggestions") or []
 
     duration_sec = max(1, round((transcript[-1]["end_ms"] - transcript[0]["start_ms"]) / 1000))
-    started = datetime.now(timezone.utc) - timedelta(days=scenario["days_ago"], minutes=duration_sec // 60)
+    started = datetime.now(UTC) - timedelta(days=scenario["days_ago"], minutes=duration_sec // 60)
     ended = started + timedelta(seconds=duration_sec)
 
     conv = await session.get(Conversation, conversation_id)
@@ -161,7 +161,7 @@ async def apply_demo_analysis(session, rep_name: str, scenario: dict[str, Any]) 
             status="ready",
             metrics=metrics,
             analysis=analysis.model_dump(),
-            created_at=conv.ended_at or datetime.now(timezone.utc),
+            created_at=conv.ended_at or datetime.now(UTC),
         )
     )
 

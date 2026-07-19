@@ -13,23 +13,22 @@ from __future__ import annotations
 import hashlib
 import json
 import math
-import re
 import threading
 import time
 from collections import OrderedDict, deque
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from app.core.config import settings
 from app.core.logging import get_logger
-from app.rag.query_cleanup import normalize_query, semantic_cache_compatible
 from app.rag.embedding_service import EmbeddingService
+from app.rag.query_cleanup import normalize_query, semantic_cache_compatible
 
 logger = get_logger(__name__)
 
 # After sort by similarity, only check top-N (each may hit Redis); limits worst-case latency.
 _SEMANTIC_MAX_CANDIDATES = 8
 
-_answer_cache_singleton: Optional["AnswerCache"] = None
+_answer_cache_singleton: AnswerCache | None = None
 _answer_cache_init_lock = threading.Lock()
 
 
@@ -37,13 +36,13 @@ def fingerprint(norm: str) -> str:
     return hashlib.sha256(norm.encode("utf-8")).hexdigest()
 
 
-def _cosine(a: List[float], b: List[float]) -> float:
+def _cosine(a: list[float], b: list[float]) -> float:
     if len(a) != len(b) or not a:
         return 0.0
     dot = 0.0
     na = 0.0
     nb = 0.0
-    for x, y in zip(a, b):
+    for x, y in zip(a, b, strict=True):
         dot += x * y
         na += x * x
         nb += y * y
@@ -66,8 +65,8 @@ class AnswerCache:
         self._redis = None
         self._redis_failed = False
         self._lock = threading.Lock()
-        self._memory: "OrderedDict[str, Tuple[Dict[str, Any], float]]" = OrderedDict()
-        self._semantic_ring: deque[Tuple[str, List[float]]] = deque(
+        self._memory: OrderedDict[str, tuple[dict[str, Any], float]] = OrderedDict()
+        self._semantic_ring: deque[tuple[str, list[float]]] = deque(
             maxlen=settings.ANSWER_CACHE_SEMANTIC_MAX_ENTRIES
         )
 
@@ -99,7 +98,7 @@ class AnswerCache:
             f"{settings.QDRANT_COLLECTION}:{fp}"
         )
 
-    def _should_cache(self, result: Dict[str, Any]) -> bool:
+    def _should_cache(self, result: dict[str, Any]) -> bool:
         if result.get("error"):
             return False
         if settings.ANSWER_CACHE_SKIP_EMPTY_SOURCES:
@@ -110,7 +109,7 @@ class AnswerCache:
 
     def get(
         self, original_query: str
-    ) -> Optional[Tuple[Dict[str, Any], str]]:
+    ) -> tuple[dict[str, Any], str] | None:
         """
         Returns (stored_payload, hit_kind) where hit_kind is 'exact' or 'semantic',
         or None on miss. Payload contains answer + sources only (no from_cache).
@@ -157,10 +156,10 @@ class AnswerCache:
                 return payload, "semantic"
         return None
 
-    def _semantic_candidates_unlocked(self, q_emb: List[float]) -> List[Tuple[str, float]]:
+    def _semantic_candidates_unlocked(self, q_emb: list[float]) -> list[tuple[str, float]]:
         """Fingerprints at or above threshold, best similarity first."""
         threshold = settings.ANSWER_CACHE_SEMANTIC_THRESHOLD
-        ranked: List[Tuple[str, float]] = []
+        ranked: list[tuple[str, float]] = []
         for fp, emb in self._semantic_ring:
             sim = _cosine(q_emb, emb)
             if sim >= threshold:
@@ -168,7 +167,7 @@ class AnswerCache:
         ranked.sort(key=lambda x: -x[1])
         return ranked[:_SEMANTIC_MAX_CANDIDATES]
 
-    def _get_exact_unlocked(self, fp: str) -> Optional[Dict[str, Any]]:
+    def _get_exact_unlocked(self, fp: str) -> dict[str, Any] | None:
         r = self._get_redis()
         if r:
             try:
@@ -194,7 +193,7 @@ class AnswerCache:
         return None
 
     def _memory_put(
-        self, fp: str, payload: Dict[str, Any], expires_at: float
+        self, fp: str, payload: dict[str, Any], expires_at: float
     ) -> None:
         max_n = settings.ANSWER_CACHE_MAX_MEMORY_ENTRIES
         self._memory[fp] = (payload, expires_at)
@@ -202,7 +201,7 @@ class AnswerCache:
         while len(self._memory) > max_n:
             self._memory.popitem(last=False)
 
-    def set(self, original_query: str, result: Dict[str, Any]) -> None:
+    def set(self, original_query: str, result: dict[str, Any]) -> None:
         if not settings.ANSWER_CACHE_ENABLED:
             return
         if not self._should_cache(result):

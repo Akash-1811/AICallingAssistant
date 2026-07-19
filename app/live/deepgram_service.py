@@ -9,7 +9,7 @@ diarization guesswork and no manual calibration.
 """
 
 import asyncio
-from typing import Any, List
+from typing import Any
 
 from deepgram import AsyncDeepgramClient
 

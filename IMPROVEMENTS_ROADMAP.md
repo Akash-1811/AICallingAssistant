@@ -96,7 +96,7 @@ Move capture **off the rep's browser entirely** — how Gong / Chorus / Cresta d
    2 seconds, the session ends permanently ([useAssistantWs.ts](frontend/src/hooks/useAssistantWs.ts)
    `onclose` → disconnect, no retry). The call's history splits into two conversations
    and the rep must manually restart mid-call.
-2. **Deepgram outage is silent.** [deepgram_service.py](app/services/deepgram_service.py)
+2. **Deepgram outage is silent.** [deepgram_service.py](app/live/deepgram_service.py)
    reconnects forever with backoff but never tells the rep transcription is down — the
    screen just goes quiet.
 3. **No session duration cap.** A forgotten open tab streams audio (and burns Deepgram
@@ -191,7 +191,7 @@ wins:
       the interims; they're currently display-only.)
 - [ ] **Async LLM path** — `google-genai` has an async client; using it removes the
       thread-per-turn + `call_soon_threadsafe` bridge in
-      [transcript_processor.py](app/services/transcript_processor.py). Cleaner
+      [transcript_processor.py](app/live/transcript_processor.py). Cleaner
       cancellation, no thread growth under many concurrent sessions.
 - [ ] The paid-tier Gemini key (business task, not code) remains the biggest single
       latency/reliability lever.
@@ -207,7 +207,7 @@ wins:
 2. **A transient LLM failure (e.g. quota) marks the analysis `failed`** and waits for
    a human to click Re-analyze — it should retry itself later.
 3. **The duplicate-question nudge is hardcoded English** — a Hindi call gets an
-   English coaching line ([transcript_processor.py](app/services/transcript_processor.py)
+   English coaching line ([transcript_processor.py](app/live/transcript_processor.py)
    `_DUPLICATE_NUDGE`).
 
 ### The fix

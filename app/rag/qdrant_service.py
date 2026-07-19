@@ -2,7 +2,6 @@
 Thin client for the Qdrant vector database — stores and searches the
 knowledge-base vectors. Flow position: called by the retriever.
 """
-from typing import Optional
 
 from qdrant_client import QdrantClient
 
@@ -29,7 +28,7 @@ class QdrantService:
             points=points,
         )
 
-    def search(self, vector, limit: Optional[int] = None):
+    def search(self, vector, limit: int | None = None):
         lim = limit if limit is not None else settings.RECALL_K
         return self.client.search(
             collection_name=settings.QDRANT_COLLECTION,

@@ -9,7 +9,6 @@ production requests; only runs once before serving traffic.
 from __future__ import annotations
 
 import time
-from typing import Optional
 
 from app.core.config import settings
 from app.core.logging import get_logger
@@ -58,7 +57,7 @@ def warm_rag_stack_sync() -> None:
                 )
                 explicit_rerank_warmup = True
 
-        llm_warmup_ms: Optional[float] = None
+        llm_warmup_ms: float | None = None
         if settings.RAG_WARMUP_LLM:
             prov = settings.LLM_PROVIDER.lower().strip()
             has_key = (

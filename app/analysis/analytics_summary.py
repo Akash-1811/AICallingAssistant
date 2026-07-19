@@ -3,14 +3,14 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from app.storage.call_store import Conversation, ConversationAnalysis
 
 
 def range_start_time(range_key: str) -> datetime:
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     days = {"7d": 7, "30d": 30, "90d": 90}.get(range_key, 30)
     return now - timedelta(days=days)
 
@@ -18,7 +18,7 @@ def range_start_time(range_key: str) -> datetime:
 def build_time_buckets(
     range_key: str, since: datetime
 ) -> list[tuple[str, datetime, datetime]]:
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     bucket_count = {"7d": 7, "30d": 6, "90d": 12}.get(range_key, 6)
     step = (now - since) / bucket_count
     buckets: list[tuple[str, datetime, datetime]] = []
@@ -34,7 +34,7 @@ def is_in_time_bucket(ts: datetime | None, start: datetime, end: datetime) -> bo
     if not ts:
         return False
     if ts.tzinfo is None:
-        ts = ts.replace(tzinfo=timezone.utc)
+        ts = ts.replace(tzinfo=UTC)
     return start <= ts < end
 
 

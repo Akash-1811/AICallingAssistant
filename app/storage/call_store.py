@@ -14,10 +14,11 @@ Example::
 
 from __future__ import annotations
 
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, AsyncIterator, Optional
+from typing import Any
 
 from sqlalchemy import JSON, DateTime, ForeignKey, Integer, String, Text, func, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
@@ -32,7 +33,7 @@ JsonColumn = JSON
 
 # Module-level connection state (set by init_database, cleared by close_database).
 db_engine = None
-db_session_factory: Optional[async_sessionmaker[AsyncSession]] = None
+db_session_factory: async_sessionmaker[AsyncSession] | None = None
 
 
 class Base(DeclarativeBase):
@@ -47,23 +48,23 @@ class Conversation(Base):
     id: Mapped[str] = mapped_column(String(36), primary_key=True)
     status: Mapped[str] = mapped_column(String(20), default="live", index=True)
     started_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+        DateTime(timezone=True), default=lambda: datetime.now(UTC)
     )
-    ended_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
-    duration_sec: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    lead_speaker_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    ended_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    duration_sec: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    lead_speaker_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     audio_channels: Mapped[int] = mapped_column(Integer, default=1)
-    workspace_id: Mapped[Optional[str]] = mapped_column(String(36), nullable=True)
-    rep_label: Mapped[Optional[str]] = mapped_column(String(120), nullable=True)
+    workspace_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    rep_label: Mapped[str | None] = mapped_column(String(120), nullable=True)
     extra: Mapped[dict[str, Any]] = mapped_column(JsonColumn, default=dict)
 
-    segments: Mapped[list["TranscriptSegmentRow"]] = relationship(
+    segments: Mapped[list[TranscriptSegmentRow]] = relationship(
         back_populates="conversation", cascade="all, delete-orphan"
     )
-    suggestions: Mapped[list["SuggestionRow"]] = relationship(
+    suggestions: Mapped[list[SuggestionRow]] = relationship(
         back_populates="conversation", cascade="all, delete-orphan"
     )
-    analyses: Mapped[list["ConversationAnalysis"]] = relationship(
+    analyses: Mapped[list[ConversationAnalysis]] = relationship(
         back_populates="conversation", cascade="all, delete-orphan"
     )
 
@@ -79,12 +80,12 @@ class TranscriptSegmentRow(Base):
     )
     speaker_id: Mapped[int] = mapped_column(Integer)
     role: Mapped[str] = mapped_column(String(12), default="unknown")
-    start_ms: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    end_ms: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    start_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    end_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
     text: Mapped[str] = mapped_column(Text)
     word_count: Mapped[int] = mapped_column(Integer, default=0)
 
-    conversation: Mapped["Conversation"] = relationship(back_populates="segments")
+    conversation: Mapped[Conversation] = relationship(back_populates="segments")
 
 
 class SuggestionRow(Base):
@@ -96,17 +97,17 @@ class SuggestionRow(Base):
     conversation_id: Mapped[str] = mapped_column(
         String(36), ForeignKey("conversations.id", ondelete="CASCADE"), index=True
     )
-    generation_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    generation_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     trigger_query: Mapped[str] = mapped_column(Text, default="")
     suggestion_text: Mapped[str] = mapped_column(Text, default="")
     from_cache: Mapped[bool] = mapped_column(default=False)
     sources: Mapped[list[Any]] = mapped_column(JsonColumn, default=list)
-    latency_ms: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    latency_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+        DateTime(timezone=True), default=lambda: datetime.now(UTC)
     )
 
-    conversation: Mapped["Conversation"] = relationship(back_populates="suggestions")
+    conversation: Mapped[Conversation] = relationship(back_populates="suggestions")
 
 
 class ConversationAnalysis(Base):
@@ -119,16 +120,16 @@ class ConversationAnalysis(Base):
         String(36), ForeignKey("conversations.id", ondelete="CASCADE"), index=True
     )
     version: Mapped[int] = mapped_column(Integer, default=1)
-    model: Mapped[Optional[str]] = mapped_column(String(80), nullable=True)
+    model: Mapped[str | None] = mapped_column(String(80), nullable=True)
     status: Mapped[str] = mapped_column(String(20), default="pending")
     metrics: Mapped[dict[str, Any]] = mapped_column(JsonColumn, default=dict)
     analysis: Mapped[dict[str, Any]] = mapped_column(JsonColumn, default=dict)
-    error: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    error: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+        DateTime(timezone=True), default=lambda: datetime.now(UTC)
     )
 
-    conversation: Mapped["Conversation"] = relationship(back_populates="analyses")
+    conversation: Mapped[Conversation] = relationship(back_populates="analyses")
 
 
 class KnowledgeSource(Base):
@@ -144,11 +145,11 @@ class KnowledgeSource(Base):
     file_size: Mapped[int] = mapped_column(Integer, default=0)
     status: Mapped[str] = mapped_column(String(20), default="processing", index=True)
     chunk_count: Mapped[int] = mapped_column(Integer, default=0)
-    error: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    error: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+        DateTime(timezone=True), default=lambda: datetime.now(UTC)
     )
-    synced_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    synced_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
 def database_enabled() -> bool:

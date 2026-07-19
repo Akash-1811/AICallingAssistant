@@ -56,7 +56,7 @@ def goregaon_qualified_transcript(first: str) -> list[dict[str, Any]]:
         _seg(1, "prospect", "That clarifies it. Yes please, send the brochure, payment plan, and maintenance sheet to rajesh dot mehta at gmail.", 166500, 173000),
         _seg(0, "rep", "Will do today. If the numbers look right, would Saturday morning work for a site visit with your wife?", 173500, 179000),
         _seg(1, "prospect", "Saturday around ten works. If the sample flat matches what we discussed, we can discuss token amount on the spot.", 179500, 185500),
-        _seg(0, "rep", f"Excellent. I will block ten A M and share the site map and visitor pass. Thank you for your time, Rajesh — speak soon.", 186000, 192000),
+        _seg(0, "rep", "Excellent. I will block ten A M and share the site map and visitor pass. Thank you for your time, Rajesh — speak soon.", 186000, 192000),
     ]
 
 
@@ -103,7 +103,7 @@ def build_scenarios(rep_name: str) -> list[dict[str, Any]]:
                 _seg(1, "prospect", "Yes, hold fourteen zero three. Send yield deck, payment schedule, and maintenance breakup on WhatsApp.", 123000, 129500),
                 _seg(0, "rep", "Will do by six P M. Would a quick site visit Thursday evening help before you block the unit?", 130000, 135500),
                 _seg(1, "prospect", "Thursday seven P M works. If the sample flat and numbers match, token can happen on visit.", 136000, 141500),
-                _seg(0, "rep", f"Blocked. I will share visitor pass and tower access map. Thank you for your time.", 142000, 146500),
+                _seg(0, "rep", "Blocked. I will share visitor pass and tower access map. Thank you for your time.", 142000, 146500),
             ],
             "suggestions": [
                 {"generation_id": 1, "trigger_query": "thane two bhk rental yield", "suggestion_text": "Share net yield after ₹12/sq ft maintenance and stamp duty.", "from_cache": False, "latency_ms": 790},
@@ -135,7 +135,7 @@ def build_scenarios(rep_name: str) -> list[dict[str, Any]]:
                 _seg(1, "prospect", "Send CAD plans, stamp duty note, and maintenance sheet to anil dot shah at outlook dot com.", 106500, 112500),
                 _seg(0, "rep", "Will do tonight. If architect approves, would Sunday eleven A M work for a joint visit?", 113000, 118500),
                 _seg(1, "prospect", "Send plans first. If layout works, Sunday eleven is likely with our architect on call.", 119000, 124500),
-                _seg(0, "rep", f"Noted. I will calendar a tentative slot and share the visitor briefing pack. Thank you, Anil and Priya.", 125000, 130500),
+                _seg(0, "rep", "Noted. I will calendar a tentative slot and share the visitor briefing pack. Thank you, Anil and Priya.", 125000, 130500),
             ],
             "suggestions": [
                 {"generation_id": 1, "trigger_query": "dadar sea facing three bhk", "suggestion_text": "Share deck dimensions and floor-rise waiver eligibility before architect review.", "from_cache": False, "latency_ms": 880},
@@ -166,7 +166,7 @@ def build_scenarios(rep_name: str) -> list[dict[str, Any]]:
                 _seg(1, "prospect", "Do that. No site visit until loan rate, maintenance, and penalty clause are documented.", 110500, 116500),
                 _seg(0, "rep", "Understood. Once you review the pack, can we schedule next Tuesday evening?", 117000, 122000),
                 _seg(1, "prospect", "Let me see numbers first. If gap versus Palava is small, Tuesday could work.", 122500, 128000),
-                _seg(0, "rep", f"Will send everything by tomorrow noon. Thank you for the detailed questions.", 128500, 133500),
+                _seg(0, "rep", "Will send everything by tomorrow noon. Thank you for the detailed questions.", 128500, 133500),
             ],
             "suggestions": [
                 {"generation_id": 1, "trigger_query": "lodha palava possession subvention", "suggestion_text": "Lead with ICICI subvention grid and legal delay clause in one PDF.", "from_cache": False, "latency_ms": 940},
@@ -196,7 +196,7 @@ def build_scenarios(rep_name: str) -> list[dict[str, Any]]:
                 _seg(1, "prospect", "Possession is fine. Maintenance and total EMI after discount are the real decision drivers.", 96000, 101500),
                 _seg(0, "rep", "I will include maintenance at thirteen rupees per square foot and an EMI snapshot with HDFC at eight point seven five.", 102000, 109500),
                 _seg(1, "prospect", "Good. Email everything to sneha dot rao at gmail. We will call back next week.", 110000, 115500),
-                _seg(0, "rep", f"Sent by tonight. Thank you, Sneha — I will follow up Wednesday if I do not hear back.", 116000, 121000),
+                _seg(0, "rep", "Sent by tonight. Thank you, Sneha — I will follow up Wednesday if I do not hear back.", 116000, 121000),
             ],
             "suggestions": [
                 {"generation_id": 1, "trigger_query": "powai sea glimpse carpet price", "suggestion_text": "Present all-in sheet: base, floor rise, parking, stamp duty, and EMI.", "from_cache": False, "latency_ms": 810},
@@ -223,7 +223,7 @@ def build_scenarios(rep_name: str) -> list[dict[str, Any]]:
                 _seg(1, "prospect", "Wagholi commute will not work. I think this is a mismatch unless something sub ninety five appears.", 86500, 92500),
                 _seg(0, "rep", "I will note your criteria. If Tower C festival inventory opens, I can alert you once.", 93000, 99000),
                 _seg(1, "prospect", "Please do not call repeatedly. Email only if a true sub ninety five lakh two BHK with two parking exists.", 99500, 106500),
-                _seg(0, "rep", f"Noted respectfully. Thank you for the clarity today.", 107000, 111000),
+                _seg(0, "rep", "Noted respectfully. Thank you for the clarity today.", 107000, 111000),
             ],
             "suggestions": [
                 {"generation_id": 1, "trigger_query": "budget one crore two parking", "suggestion_text": "Qualify all-in budget before sea-facing pitch; pivot to Wagholi earlier.", "from_cache": False, "latency_ms": 690},
@@ -251,7 +251,7 @@ def build_scenarios(rep_name: str) -> list[dict[str, Any]]:
                 _seg(1, "prospect", "Send that breakdown on email only. This call was not efficient — too much pitching.", 88000, 93500),
                 _seg(0, "rep", "I understand. I will email the all-in sheet and metro map tonight.", 94000, 98500),
                 _seg(1, "prospect", "Do not call again unless the email answers every number I asked.", 99000, 103000),
-                _seg(0, "rep", f"Understood. Thank you for your time.", 103500, 106500),
+                _seg(0, "rep", "Understood. Thank you for your time.", 103500, 106500),
             ],
             "suggestions": [
                 {"generation_id": 1, "trigger_query": "borivali starting price five minutes", "suggestion_text": "Lead with price, carpet, metro distance — save amenities until asked.", "from_cache": False, "latency_ms": 540},
@@ -278,7 +278,7 @@ def build_scenarios(rep_name: str) -> list[dict[str, Any]]:
                 _seg(1, "prospect", "Send soft copy only — commute matrix, sample payment plan, and amenity list. No site visit now.", 76500, 82500),
                 _seg(0, "rep", "Absolutely. Would a check-in after two months work once you have compared BKC commute options?", 83000, 88500),
                 _seg(1, "prospect", "Yes, email first and call in October if we are still active.", 89000, 93500),
-                _seg(0, "rep", f"Will do. Thank you for the early research call — I will send the overview today.", 94000, 99000),
+                _seg(0, "rep", "Will do. Thank you for the early research call — I will send the overview today.", 94000, 99000),
             ],
             "suggestions": [],
         },

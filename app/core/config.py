@@ -2,7 +2,6 @@
 Every tunable setting in one place, loaded from .env. If you are tempted to
 hardcode a number anywhere else, it probably belongs here with a comment.
 """
-from typing import Optional
 
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -19,12 +18,12 @@ class Settings(BaseSettings):
     # development | staging | production — in production, missing API keys fail startup
     ENVIRONMENT: str = Field(default="development")
 
-    GEMINI_API_KEY: Optional[str] = None
+    GEMINI_API_KEY: str | None = None
     # Stable model id for the google-genai SDK. Google deprecates older IDs regularly;
     # use a current name from https://ai.google.dev/gemini-api/docs/models/gemini
     # (e.g. gemini-3.5-flash). Older models (gemini-2.5-flash, gemini-2.0-flash) 404 for new API keys.
     GEMINI_MODEL: str = "gemini-3.5-flash"
-    REALTIME_GEMINI_MODEL: Optional[str] = None
+    REALTIME_GEMINI_MODEL: str | None = None
     GEMINI_TEMPERATURE: float = 0.25
     # Lower = faster generation; 512 is enough for 3–5 short sentences in grounded mode.
     GEMINI_MAX_OUTPUT_TOKENS: int = 512
@@ -32,14 +31,14 @@ class Settings(BaseSettings):
     # RAG answer LLM: gemini (default) or openai
     LLM_PROVIDER: str = "gemini"
     # Optional live-call override. Empty/None falls back to LLM_PROVIDER.
-    REALTIME_LLM_PROVIDER: Optional[str] = None
-    OPENAI_API_KEY: Optional[str] = None
+    REALTIME_LLM_PROVIDER: str | None = None
+    OPENAI_API_KEY: str | None = None
     OPENAI_MODEL: str = "gpt-4o-mini"
-    REALTIME_OPENAI_MODEL: Optional[str] = None
+    REALTIME_OPENAI_MODEL: str | None = None
     OPENAI_TEMPERATURE: float = 0.25
     OPENAI_MAX_OUTPUT_TOKENS: int = 512
 
-    DEEPGRAM_API_KEY: Optional[str] = None
+    DEEPGRAM_API_KEY: str | None = None
     # Speech-to-text: use nova-3 + language=multi for multilingual (code-switching). Override to nova-2 + en for English-only.
     DEEPGRAM_MODEL: str = "nova-3"
     DEEPGRAM_LANGUAGE: str = "multi"
@@ -49,13 +48,13 @@ class Settings(BaseSettings):
     QDRANT_URL: str = "http://localhost:6333"
     QDRANT_COLLECTION: str = "real_estate"
 
-    REDIS_URL: Optional[str] = None
+    REDIS_URL: str | None = None
     SESSION_TTL_SECONDS: int = 86400
 
     # Durable call archive + post-call analysis (PostgreSQL or SQLite)
     DATABASE_ENABLED: bool = True
     DATABASE_URL: str = "sqlite+aiosqlite:///./data/calls.db"
-    ANALYSIS_LLM_PROVIDER: Optional[str] = None
+    ANALYSIS_LLM_PROVIDER: str | None = None
     ANALYSIS_GEMINI_MODEL: str = "gemini-3.5-flash"
     ANALYSIS_OPENAI_MODEL: str = "gpt-4o-mini"
     ANALYSIS_MAX_OUTPUT_TOKENS: int = 8192
@@ -116,7 +115,7 @@ class Settings(BaseSettings):
     CORS_ORIGINS: str = ""
 
     # If set, require this value in X-API-Key (REST) or x-api-key / ?api_key= (WebSocket)
-    INTERNAL_API_KEY: Optional[str] = None
+    INTERNAL_API_KEY: str | None = None
 
     JWT_SECRET: str = "dev-change-me-in-production"
     JWT_EXPIRE_MINUTES: int = 60 * 24 * 7
@@ -147,7 +146,7 @@ class Settings(BaseSettings):
     # OpenTelemetry (optional): pip install opentelemetry-api opentelemetry-sdk
     OTEL_ENABLED: bool = False
     OTEL_SERVICE_NAME: str = "ai-calling-assistant"
-    OTEL_EXPORTER_OTLP_ENDPOINT: Optional[str] = None
+    OTEL_EXPORTER_OTLP_ENDPOINT: str | None = None
 
     @field_validator("GEMINI_TEMPERATURE", "OPENAI_TEMPERATURE")
     @classmethod

@@ -1,6 +1,6 @@
 """Versioned, explicit prompts — keep sales tone consistent and reduce hallucinations."""
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 
 def _language_instruction(language_hint: str) -> str:
@@ -11,7 +11,7 @@ def _language_instruction(language_hint: str) -> str:
     return "Answer in English unless the agent's turn is clearly Hindi or Marathi — then match that language."
 
 
-def _conversation_session_block(ctx: Optional[Dict[str, Any]]) -> str:
+def _conversation_session_block(ctx: dict[str, Any] | None) -> str:
     if not ctx:
         return ""
     pq = (ctx.get("previous_query") or "").strip()
@@ -41,7 +41,7 @@ def build_grounded_answer_prompt(
     query: str,
     numbered_context: str,
     *,
-    conversation_context: Optional[Dict[str, Any]] = None,
+    conversation_context: dict[str, Any] | None = None,
 ) -> str:
     """
     Numbered context blocks let the model anchor on specific passages.
@@ -75,7 +75,7 @@ ANSWER (1–2 spoken sentences + one forward-moving question, first-person as th
 def build_no_context_prompt(
     query: str,
     *,
-    conversation_context: Optional[Dict[str, Any]] = None,
+    conversation_context: dict[str, Any] | None = None,
 ) -> str:
     """When retrieval returns nothing; still multilingual via LLM."""
     lang = (conversation_context or {}).get("language_hint") or "en"
@@ -102,7 +102,7 @@ def build_live_suggestion_prompt(
     question: str,
     numbered_context: str,
     *,
-    conversation_context: Optional[Dict[str, Any]] = None,
+    conversation_context: dict[str, Any] | None = None,
 ) -> str:
     """
     One prompt for every live turn: the model classifies the customer's intent

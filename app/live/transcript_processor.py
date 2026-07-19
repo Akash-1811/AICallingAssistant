@@ -8,13 +8,15 @@ import asyncio
 import threading
 import time
 from itertools import count
-from typing import Any, List
+from typing import Any
 
 from app.core.config import settings
 from app.core.logging import get_logger
+from app.live.call_recorder import OutboundQueue
 from app.live.conversation_manager import (
     conversation_manager,
 )
+from app.live.transcript_types import TranscriptSegment
 from app.live.turn_gate import is_closing_pleasantry
 from app.rag.pipeline import get_rag_pipeline
 from app.rag.query_cleanup import (
@@ -22,8 +24,6 @@ from app.rag.query_cleanup import (
     normalize_live_query,
     queries_are_near_duplicate,
 )
-from app.live.call_recorder import OutboundQueue
-from app.live.transcript_types import TranscriptSegment
 
 logger = get_logger(__name__)
 
@@ -58,7 +58,7 @@ class TranscriptProcessor:
         current_cancel: threading.Event | None = None
 
         while True:
-            segments: List[TranscriptSegment] = await transcript_queue.get()
+            segments: list[TranscriptSegment] = await transcript_queue.get()
 
             if not segments:
                 continue
@@ -284,7 +284,7 @@ class TranscriptProcessor:
                         event_queue.get(),
                         timeout=settings.RAG_TIMEOUT_SECONDS,
                     )
-                except asyncio.TimeoutError:
+                except TimeoutError:
                     cancel_event.set()
                     if self._is_generation_current(session_id, generation_id):
                         await outbound_queue.put(

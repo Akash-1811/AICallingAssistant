@@ -18,11 +18,12 @@ Example::
 from __future__ import annotations
 
 import asyncio
-from datetime import datetime, timezone
-from typing import Any, Optional, Protocol
+from datetime import UTC, datetime
+from typing import Any, Protocol
 
 from sqlalchemy import select
 
+from app.core.logging import get_logger
 from app.storage.call_store import (
     Conversation,
     SuggestionRow,
@@ -30,12 +31,11 @@ from app.storage.call_store import (
     database_enabled,
     get_db,
 )
-from app.core.logging import get_logger
 
 logger = get_logger(__name__)
 
 
-def speaker_role(speaker_id: int, lead_speaker_id: Optional[int]) -> str:
+def speaker_role(speaker_id: int, lead_speaker_id: int | None) -> str:
     """
     Map a speaker channel to ``rep``, ``prospect``, or ``unknown``.
 
@@ -81,7 +81,7 @@ class RecordingQueue:
         self.client_queue = client_queue
         self.conversation_id = conversation_id
         self._pending: asyncio.Queue = asyncio.Queue()
-        self._writer: Optional[asyncio.Task] = None
+        self._writer: asyncio.Task | None = None
         if database_enabled():
             self._writer = asyncio.create_task(
                 self._drain(), name=f"recorder-{conversation_id[:8]}"
@@ -137,7 +137,7 @@ async def start_conversation(conversation_id: str, *, audio_channels: int = 1) -
                 id=conversation_id,
                 status="live",
                 audio_channels=audio_channels,
-                started_at=datetime.now(timezone.utc),
+                started_at=datetime.now(UTC),
             )
         )
         await session.commit()
@@ -188,7 +188,7 @@ async def update_lead_speaker(conversation_id: str, lead: Any) -> None:
         await session.commit()
 
 
-def parse_optional_int(value: Any) -> Optional[int]:
+def parse_optional_int(value: Any) -> int | None:
     """
     Parse an optional integer from a WebSocket payload field.
 
@@ -308,7 +308,7 @@ async def finalize_conversation(conversation_id: str) -> bool:
             return False
         if row.status not in ("live", "failed"):
             return False
-        ended = datetime.now(timezone.utc)
+        ended = datetime.now(UTC)
         row.ended_at = ended
         if row.started_at:
             row.duration_sec = max(0, int((ended - row.started_at).total_seconds()))
@@ -339,7 +339,7 @@ async def set_conversation_status(
         await session.commit()
 
 
-async def load_conversation_bundle(conversation_id: str) -> Optional[dict[str, Any]]:
+async def load_conversation_bundle(conversation_id: str) -> dict[str, Any] | None:
     """
     Load a conversation with all transcript segments and suggestions ordered by id.
 

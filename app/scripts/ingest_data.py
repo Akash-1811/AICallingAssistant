@@ -30,7 +30,7 @@ _QDRANT_READY_DELAY_SEC = 1.0
 def _wait_for_qdrant(client: QdrantClient) -> None:
     """Qdrant HTTP may not accept connections the instant the container is 'healthy'."""
     last: Exception | None = None
-    for attempt in range(_QDRANT_READY_RETRIES):
+    for _attempt in range(_QDRANT_READY_RETRIES):
         try:
             client.get_collections()
             return

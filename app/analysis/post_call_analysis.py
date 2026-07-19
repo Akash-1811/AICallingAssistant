@@ -19,23 +19,29 @@ from __future__ import annotations
 import asyncio
 import json
 import re
-from datetime import datetime, timezone
-from typing import Any, Optional
+from datetime import UTC, datetime
+from typing import Any
 
 from google.genai import types as genai_types
 from openai import OpenAI
 from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import desc, select
 
-from app.storage.call_store import Conversation, ConversationAnalysis, database_enabled, get_db, next_analysis_version
-from app.core.config import settings
-from app.core.logging import get_logger
-from app.live.call_recorder import load_conversation_bundle, set_conversation_status
-from app.rag.gemini_service import get_gemini_client
 from app.analysis.speech_metrics import (
     build_call_glance,
     build_engagement_curves,
     compute_speech_metrics,
+)
+from app.core.config import settings
+from app.core.logging import get_logger
+from app.live.call_recorder import load_conversation_bundle, set_conversation_status
+from app.rag.gemini_service import get_gemini_client
+from app.storage.call_store import (
+    Conversation,
+    ConversationAnalysis,
+    database_enabled,
+    get_db,
+    next_analysis_version,
 )
 
 logger = get_logger(__name__)
@@ -69,7 +75,7 @@ class ObjectionItem(BaseModel):
 class CoachingTip(BaseModel):
     area: str
     recommendation: str
-    example_moment_ms: Optional[int] = None
+    example_moment_ms: int | None = None
 
 
 class TalkListenRatio(BaseModel):
@@ -339,7 +345,7 @@ def build_coaching_insight(
 
 def finalize_dashboard_metrics(
     metrics: dict[str, Any],
-    analysis: Optional[PostCallAnalysisResult] = None,
+    analysis: PostCallAnalysisResult | None = None,
 ) -> dict[str, Any]:
     """Attach dashboard-friendly glance stats, measured curves, and coaching insight."""
     metrics["call_glance"] = build_call_glance(metrics)
@@ -359,7 +365,7 @@ def finalize_dashboard_metrics(
     return metrics
 
 
-def segment_start_for_quote(segments: list[dict[str, Any]], quote: str) -> Optional[int]:
+def segment_start_for_quote(segments: list[dict[str, Any]], quote: str) -> int | None:
     """Find segment start_ms whose text best matches an evidence quote."""
     needle = (quote or "").strip().lower()
     if len(needle) < 12:
@@ -534,7 +540,7 @@ async def run_post_call_analysis(conversation_id: str) -> None:
     segments = bundle["segments"]
     suggestions = bundle["suggestions"]
     metrics: dict[str, Any] = {}
-    analysis_row_id: Optional[int] = None
+    analysis_row_id: int | None = None
     model_name = ""
 
     if not segments:
@@ -593,7 +599,7 @@ async def run_post_call_analysis(conversation_id: str) -> None:
                 version=version,
                 status="running",
                 metrics=metrics,
-                created_at=datetime.now(timezone.utc),
+                created_at=datetime.now(UTC),
             )
             session.add(row)
             await session.commit()

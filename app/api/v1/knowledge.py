@@ -9,8 +9,8 @@ from pydantic import BaseModel, ConfigDict
 from sqlalchemy import select
 
 from app.api.v1.auth import User, get_current_user
-from app.storage.call_store import KnowledgeSource, get_db
 from app.rag.knowledge import knowledge
+from app.storage.call_store import KnowledgeSource, get_db
 
 router = APIRouter(prefix="/knowledge", tags=["knowledge"])
 

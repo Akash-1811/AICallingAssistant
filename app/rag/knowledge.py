@@ -7,7 +7,7 @@ import csv
 import hashlib
 import json
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from pypdf import PdfReader
@@ -23,10 +23,10 @@ from qdrant_client.models import (
 )
 from sqlalchemy import delete
 
-from app.storage.call_store import KnowledgeSource, get_db
 from app.core.config import settings
 from app.core.logging import get_logger
 from app.rag.embedding_service import EmbeddingService
+from app.storage.call_store import KnowledgeSource, get_db
 
 logger = get_logger(__name__)
 
@@ -219,7 +219,7 @@ class KnowledgeService:
                 source_id,
                 status="ready",
                 chunk_count=chunk_count,
-                synced_at=datetime.now(timezone.utc),
+                synced_at=datetime.now(UTC),
                 error=None,
             )
             logger.info("Knowledge ready id=%s chunks=%d", source_id, chunk_count)

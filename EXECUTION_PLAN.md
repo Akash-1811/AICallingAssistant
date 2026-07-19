@@ -18,12 +18,12 @@ Detailed reasoning for each item lives in [IMPROVEMENTS_ROADMAP.md](IMPROVEMENTS
 
 The prerequisite for literally everything else. No code changes.
 
-- [ ] `git init` with `.gitignore` covering: `.env`, `data/`, `.venv/`,
+- [x] `git init` with `.gitignore` covering: `.env`, `data/`, `.venv/`,
       `node_modules/`, `__pycache__/`, `.pytest_cache/`, `.tmp_dg*`
-- [ ] Initial commit; push to a **private** GitHub repo
+- [x] Initial commit; push to a **private** GitHub repo
 - [ ] Rotate every API key that has been exposed (Gemini, Deepgram, OpenAI, HF,
       Anthropic) — §9
-- [ ] Delete unused keys from `.env` (`GEMINI_API_KEY1..5`, `DEEPGRAM_API_KEY3`,
+- [x] Delete unused keys from `.env` (`GEMINI_API_KEY1..5`, `DEEPGRAM_API_KEY3`,
       `HUGGINGFACE_API_KEY`, `ANTHROPIC_API_KEY`) — §9
 
 **Done when:** repo exists with a tagged first commit; `.env` contains only keys the
@@ -60,32 +60,32 @@ app/
 Six top-level concepts that mirror ARCHITECTURE.md's flow diagram — the folder tree
 *is* the architecture.
 
-### 1b. Rename for plain English
-Build a rename map (one commit, documented in the commit message). Candidates:
-- `modules/conversation_intelligence/` → gone (file moves to `live/`)
-- `add_segments_and_get_focused_query()` → shorter, honest name (e.g. `record_turn()`)
-- `intent_heuristics.py` → `turn_gate.py` (that's all it does now)
-- `query_normalize.py` + `query_intent.py` → merge into one `query_cleanup.py`
-- Review every public function name: if the name needs the docstring to be understood,
-  rename it.
+### 1b. Rename for plain English  ✅ done
+Applied rename map:
+- `modules/conversation_intelligence/` → gone (file moved to `live/`)
+- `add_segments_and_get_focused_query()` → `record_turn()`
+- `looks_like_closing_or_acknowledgement()` → `is_closing_pleasantry()`
+- `intent_heuristics.py` → `turn_gate.py`
+- `query_normalize.py` + `query_intent.py` → merged into `query_cleanup.py`
+- `core/loggin.py` (typo) → `core/logging.py`
 
 ### 1c. File headers + helper audit
-- [ ] Every file starts with 2–3 plain-English lines: what it does, and where it sits
+- [x] Every file starts with 2–3 plain-English lines: what it does, and where it sits
       in the call flow.
-- [ ] Inline every helper with exactly one caller (unless it exists to be tested).
-- [ ] Merge files under ~40 lines into their only consumer where sensible
+- [x] Inline every helper with exactly one caller (unless it exists to be tested).
+- [x] Merge files under ~40 lines into their only consumer where sensible
       (e.g. frontend `json.ts`/`utils.ts` candidates).
 
 ### 1d. Dead code sweep (§9)
-- [ ] Remove `static/index.html` legacy tester + `/ui` mount + root redirect
-- [ ] Delete `.tmp_dg/`, `.tmp_dg2/`
-- [ ] Move stale docs (`PROJECT_OVERVIEW.md`, `AI_Calling_Assistant_Full_Production_Guide.md`)
+- [x] Remove `static/index.html` legacy tester + `/ui` mount + root redirect
+- [x] Delete `.tmp_dg/`, `.tmp_dg2/`
+- [x] Move stale docs (`PROJECT_OVERVIEW.md`, `AI_Calling_Assistant_Full_Production_Guide.md`)
       into `docs/archive/` with a "superseded by ARCHITECTURE.md" note
-- [ ] Verify every `config.py` setting still has a caller; delete orphans
+- [x] Verify every `config.py` setting still has a caller; delete orphans
 
 ### 1e. Mechanical style enforcement (§8)
-- [ ] `ruff` (lint + format) for Python; `eslint` + `prettier` for TS
-- [ ] Fix everything they flag once; from then on it's automatic
+- [x] `ruff` (lint + format) for Python — done; `eslint`/`prettier` for TS deferred to Phase 5 CI setup
+- [x] Fix everything they flag once; from then on it's automatic (ruff: clean)
 
 **Done when:** folder tree matches the diagram above; every file has a header; no
 single-caller helpers remain; ruff/eslint pass clean; all tests + `tsc` pass; imports

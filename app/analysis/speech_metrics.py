@@ -20,7 +20,8 @@ Example::
 from __future__ import annotations
 
 import re
-from typing import Any, Iterable, Optional
+from collections.abc import Iterable
+from typing import Any
 
 # Deliberately narrow: "yes", "okay", "sure", "right" are real answers on a
 # sales call, not fillers — counting them would inflate the coaching metric.
@@ -112,7 +113,7 @@ def format_ms_label(ms: int) -> str:
 def compute_call_timeline(
     segments: Iterable[dict[str, Any]],
     *,
-    lead_speaker_id: Optional[int] = None,
+    lead_speaker_id: int | None = None,
     bucket_count: int = 16,
 ) -> dict[str, Any]:
     """
@@ -212,7 +213,7 @@ def compute_speech_metrics(
     segments: Iterable[dict[str, Any]],
     suggestions: Iterable[dict[str, Any]],
     *,
-    lead_speaker_id: Optional[int] = None,
+    lead_speaker_id: int | None = None,
 ) -> dict[str, Any]:
     """
     Compute Gong / Read AI-style coaching metrics for one saved call.

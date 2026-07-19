@@ -18,6 +18,9 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import desc, select
 
+from app.analysis.analytics_summary import build_analytics_summary, range_start_time
+from app.analysis.post_call_analysis import refresh_call_metrics, schedule_post_call_analysis
+from app.api.v1.auth import get_current_user
 from app.storage.call_store import (
     Conversation,
     ConversationAnalysis,
@@ -26,9 +29,6 @@ from app.storage.call_store import (
     database_enabled,
     get_db,
 )
-from app.api.v1.auth import get_current_user
-from app.analysis.analytics_summary import build_analytics_summary, range_start_time
-from app.analysis.post_call_analysis import refresh_call_metrics, schedule_post_call_analysis
 
 router = APIRouter(
     prefix="/conversations",

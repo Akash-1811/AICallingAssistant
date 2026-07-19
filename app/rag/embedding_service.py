@@ -4,8 +4,6 @@ Hindi and English land in the same vector space, so no translation is needed.
 Flow position: first step of retrieval; also used at knowledge-base ingest.
 """
 import hashlib
-from functools import lru_cache
-from typing import List
 
 from sentence_transformers import SentenceTransformer
 
@@ -23,7 +21,7 @@ class EmbeddingService:
             self.model, settings.EMBEDDING_CACHE_SIZE
         )
 
-    def embed(self, text: str) -> List[float]:
+    def embed(self, text: str) -> list[float]:
         return self._embed_cached(text.strip())
 
 
@@ -39,16 +37,15 @@ def _make_cached_embedder(model: SentenceTransformer, maxsize: int):
             return hashlib.sha256(text.encode()).hexdigest()
         return text
 
-    cached: dict = {}  # simple bounded dict (LRU via OrderedDict semantics below)
     from collections import OrderedDict
     store: OrderedDict = OrderedDict()
 
-    def embed(text: str) -> List[float]:
+    def embed(text: str) -> list[float]:
         key = _cache_key(text)
         if key in store:
             store.move_to_end(key)
             return store[key]
-        vector: List[float] = model.encode(text).tolist()
+        vector: list[float] = model.encode(text).tolist()
         store[key] = vector
         if len(store) > maxsize:
             store.popitem(last=False)  # evict oldest

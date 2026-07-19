@@ -65,7 +65,7 @@ DeepgramService.stream_transcription()                                 │
         │                                                              │  session,
         ▼                                                              │  concurrently,
 TranscriptProcessor.process_stream()                                    │  as asyncio
-   → conversation_manager.add_segments_and_get_focused_query()          │  tasks
+   → conversation_manager.record_turn()          │  tasks
      - appends to per-session history (Redis or in-memory)              │
      - decides who the "lead" (customer) is: channel 1 if it has        │
        spoken, else the only channel that exists                        │
@@ -121,15 +121,15 @@ and send events back to the browser. The session lives as long as `receive_audio
 running; when the browser disconnects, everything else is cancelled and the call is
 finalized.
 
-**3. Speech-to-text** — [app/services/deepgram_service.py](app/services/deepgram_service.py)
+**3. Speech-to-text** — [app/live/deepgram_service.py](app/live/deepgram_service.py)
 `DeepgramService.stream_transcription()` opens one Deepgram connection with
 `multichannel=true`, forwards audio, and parses `Results` messages into
 `TranscriptSegment` objects — text + which channel (= which person) said it + word
 timestamps. Auto-reconnects on transient failures without dropping the browser
 connection.
 
-**4. Conversation memory & the "current question"** — [app/modules/conversation_intelligence/conversation_manager.py](app/modules/conversation_intelligence/conversation_manager.py)
-`ConversationManager.add_segments_and_get_focused_query()` is the function that turns
+**4. Conversation memory & the "current question"** — [app/live/conversation_manager.py](app/live/conversation_manager.py)
+`ConversationManager.record_turn()` is the function that turns
 raw transcript segments into "what does the AI need to answer right now." It:
 - Stores history per session (Redis if configured, else an in-process dict)
 - Decides the lead speaker channel (`_lead_speaker_id()`: channel 1 if it's spoken,
@@ -137,48 +137,48 @@ raw transcript segments into "what does the AI need to answer right now." It:
 - Builds the retrieval query, stitching in the previous turn when the customer says
   something like "what about *that*?" (`_extract_best_query()`)
 
-**5. Turn gating** — [app/services/transcript_processor.py](app/services/transcript_processor.py)
+**5. Turn gating** — [app/live/transcript_processor.py](app/live/transcript_processor.py)
 `TranscriptProcessor.process_stream()` is the main loop: one iteration per finished
 customer sentence. It drops turns that are too short, pure filler, or (via
-`looks_like_closing_or_acknowledgement()` in
-[intent_heuristics.py](app/modules/rag/intent_heuristics.py)) just a "thank you" —
+`is_closing_pleasantry()` in
+[turn_gate.py](app/live/turn_gate.py)) just a "thank you" —
 saving an LLM call and keeping the rep's screen quiet when nothing new was said. It
 also cancels a still-streaming suggestion if the customer has moved on to a new topic
 (barge-in), using a per-turn `generation_id` so stale results are never shown.
 
-**6. Retrieval** — [app/modules/rag/retriever.py](app/modules/rag/retriever.py)
+**6. Retrieval** — [app/rag/retriever.py](app/rag/retriever.py)
 `RAGRetriever.retrieve()`: embeds the query (multilingual model, so Hindi and English
 search the same space with no translation step), searches Qdrant, blends vector score
 with keyword overlap, applies small metadata-based rank nudges, and reranks the
 survivors with a cross-encoder — unless the query is too short to bother.
 
-**7. Answer generation** — [app/modules/rag/pipeline.py](app/modules/rag/pipeline.py)
+**7. Answer generation** — [app/rag/pipeline.py](app/rag/pipeline.py)
 `RAGPipeline.stream_live()` is the heart of the live path: checks the answer cache,
 retrieves chunks, then calls the LLM service's `stream_live()`. The **model itself**
 classifies the turn (question / opener / objection / closing — see
-`build_live_suggestion_prompt()` in [prompts.py](app/modules/rag/prompts.py)) and
+`build_live_suggestion_prompt()` in [prompts.py](app/rag/prompts.py)) and
 writes the reply in one pass; `extract_intent()` in `pipeline.py` peels the tag line
 off before the text is streamed onward. There's no keyword-based intent routing
 anymore — the LLM understands any phrasing, any language.
 
-**8. The LLM services** — [app/services/gemini_service.py](app/services/gemini_service.py) /
-[app/services/openai_service.py](app/services/openai_service.py)
+**8. The LLM services** — [app/rag/gemini_service.py](app/rag/gemini_service.py) /
+[app/rag/openai_service.py](app/rag/openai_service.py)
 Both expose the same two methods: `stream_live()` (realtime, streamed) and
 `generate_answer()` (used by the plain REST `/ask` endpoint). Provider choice is
 config-driven via `get_llm_service()` in
-[app/services/llm_factory.py](app/services/llm_factory.py) — `LLM_PROVIDER` /
+[app/rag/llm_factory.py](app/rag/llm_factory.py) — `LLM_PROVIDER` /
 `REALTIME_LLM_PROVIDER` in settings, so live calls can use a faster/cheaper model than
 the REST path.
 
-**9. Delivery + persistence** — [app/services/call_recorder.py](app/services/call_recorder.py)
+**9. Delivery + persistence** — [app/live/call_recorder.py](app/live/call_recorder.py)
 `RecordingQueue` wraps the outbound event queue: every event is forwarded to the
 browser **immediately**, and persisted to the database from a background writer task —
 so a slow database write can never delay what the rep sees. `flush_and_close()` is
 awaited when the session ends, guaranteeing everything is saved before analysis runs.
 
-**10. Post-call analysis** — [app/services/post_call_analysis.py](app/services/post_call_analysis.py)
+**10. Post-call analysis** — [app/analysis/post_call_analysis.py](app/analysis/post_call_analysis.py)
 `run_post_call_analysis()` runs once per finished call:
-- `compute_speech_metrics()` (in [speech_metrics.py](app/services/speech_metrics.py)) —
+- `compute_speech_metrics()` (in [speech_metrics.py](app/analysis/speech_metrics.py)) —
   pure arithmetic on the transcript: talk/listen ratio, pace, filler rate, questions
   asked, per-window activity. No LLM involved.
 - One LLM call returns structured JSON (`PostCallAnalysisResult`) — client intent,
@@ -193,7 +193,7 @@ awaited when the session ends, guaranteeing everything is saved before analysis 
 
 ## 4. Database shape
 
-Four tables, in [app/call_store.py](app/call_store.py):
+Four tables, in [app/storage/call_store.py](app/storage/call_store.py):
 - **`conversations`** — one row per call (status, duration, lead channel)
 - **`transcript_segments`** — every finalized sentence, with speaker role and timestamps
 - **`suggestions`** — every AI suggestion shown, with latency and cache-hit info
@@ -251,12 +251,12 @@ Everything tunable lives in [app/core/config.py](app/core/config.py) (loaded fro
 
 1. [app/api/websocket/realtime.py](app/api/websocket/realtime.py) — see the whole
    session wired together in one file.
-2. [app/services/transcript_processor.py](app/services/transcript_processor.py) — the
+2. [app/live/transcript_processor.py](app/live/transcript_processor.py) — the
    main per-turn loop.
-3. [app/modules/rag/pipeline.py](app/modules/rag/pipeline.py) — retrieval + LLM call.
-4. [app/modules/rag/prompts.py](app/modules/rag/prompts.py) — the actual prompt the
+3. [app/rag/pipeline.py](app/rag/pipeline.py) — retrieval + LLM call.
+4. [app/rag/prompts.py](app/rag/prompts.py) — the actual prompt the
    model sees; this is where "tone" and "intent classification" are defined.
-5. [app/services/post_call_analysis.py](app/services/post_call_analysis.py) — the
+5. [app/analysis/post_call_analysis.py](app/analysis/post_call_analysis.py) — the
    report generator.
 
 That's the whole system. Everything else (auth, knowledge upload, analytics dashboard)

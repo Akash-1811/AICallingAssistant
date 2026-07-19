@@ -1,6 +1,6 @@
 """Liveness and readiness probes for orchestration and load balancers."""
 
-from typing import Any, Dict
+from typing import Any
 
 from fastapi import APIRouter
 from qdrant_client import QdrantClient
@@ -14,18 +14,18 @@ router = APIRouter(tags=["health"])
 
 
 @router.get("/live")
-def live() -> Dict[str, str]:
+def live() -> dict[str, str]:
     """Process is up (do not check dependencies)."""
     return {"status": "ok"}
 
 
 @router.get("/ready")
-def ready() -> Dict[str, Any]:
+def ready() -> dict[str, Any]:
     """
     Dependency checks for traffic routing.
     Fails if Qdrant is unreachable (required for RAG).
     """
-    checks: Dict[str, Any] = {"qdrant": "unknown", "redis": "skipped"}
+    checks: dict[str, Any] = {"qdrant": "unknown", "redis": "skipped"}
 
     try:
         client = QdrantClient(settings.QDRANT_URL, timeout=5)

@@ -4,15 +4,15 @@ embed the query, vector-search Qdrant, blend in keyword overlap, then rerank
 with a cross-encoder. Returns the top handful of passages for the LLM prompt.
 """
 import time
-from typing import Any, List, Optional
+from typing import Any
 
 from sentence_transformers import CrossEncoder
 
 from app.core.config import settings
 from app.core.logging import get_logger
 from app.core.telemetry import get_tracer
-from app.rag.models import RetrievedChunk
 from app.rag.embedding_service import EmbeddingService
+from app.rag.models import RetrievedChunk
 from app.rag.qdrant_service import QdrantService
 
 logger = get_logger(__name__)
@@ -49,7 +49,7 @@ def _metadata_rank_adjustment(chunk: RetrievedChunk) -> float:
     return 0.0
 
 
-def _chunk_from_payload(r: Any) -> Optional[RetrievedChunk]:
+def _chunk_from_payload(r: Any) -> RetrievedChunk | None:
     payload = r.payload or {}
     text = payload.get("text")
     if not text:
@@ -72,7 +72,7 @@ class RAGRetriever:
     def __init__(self):
         self.embedder = EmbeddingService()
         self.qdrant = QdrantService()
-        self._reranker: Optional[CrossEncoder] = None
+        self._reranker: CrossEncoder | None = None
 
     def _get_reranker(self) -> CrossEncoder:
         if self._reranker is None:
@@ -82,10 +82,10 @@ class RAGRetriever:
     def _hybrid_scored_chunks(
         self,
         query: str,
-        results: List[Any],
-    ) -> List[RetrievedChunk]:
+        results: list[Any],
+    ) -> list[RetrievedChunk]:
         w = settings.HYBRID_KEYWORD_WEIGHT
-        scored: List[tuple[float, RetrievedChunk]] = []
+        scored: list[tuple[float, RetrievedChunk]] = []
         for r in results:
             payload = r.payload or {}
             text = payload.get("text")
@@ -108,10 +108,10 @@ class RAGRetriever:
         self,
         query: str,
         *,
-        recall_k: Optional[int] = None,
-        top_k: Optional[int] = None,
-        reranker_min_words: Optional[int] = None,
-    ) -> List[RetrievedChunk]:
+        recall_k: int | None = None,
+        top_k: int | None = None,
+        reranker_min_words: int | None = None,
+    ) -> list[RetrievedChunk]:
         tracer = get_tracer()
         with tracer.start_as_current_span("rag.retrieve") as span:
             recall = recall_k if recall_k is not None else settings.RECALL_K
@@ -183,9 +183,9 @@ class RAGRetriever:
                     texts = [c.text for c in chunks]
                     pairs = [[search_query, t] for t in texts]
                     scores = reranker.predict(pairs)
-                    for c, s in zip(chunks, scores):
+                    for c, s in zip(chunks, scores, strict=True):
                         c.rerank_score = float(s)
-                    ranked = sorted(zip(scores, chunks), key=lambda x: x[0], reverse=True)
+                    ranked = sorted(zip(scores, chunks, strict=True), key=lambda x: x[0], reverse=True)
                     out = [c for _, c in ranked[:limit]]
                     rerank_ms = (time.perf_counter() - t_rerank) * 1000.0
                 span.set_attribute("result.count", len(out))

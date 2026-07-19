@@ -1,0 +1,15 @@
+# Mechanical style enforcement — style is never a review topic.
+line-length = 100
+target-version = "py311"
+
+[lint]
+# E/F: pycodestyle + pyflakes basics. I: import order. B: likely bugs. UP: modern syntax.
+select = ["E", "F", "I", "B", "UP"]
+ignore = [
+    "E501",  # long lines: allowed where breaking hurts readability (prompts, log msgs)
+    "B008",  # Depends()/File() in defaults is idiomatic FastAPI, not a bug
+]
+
+[lint.per-file-ignores]
+# Tests may import inside functions for scenario isolation.
+"tests/*" = ["E402"]

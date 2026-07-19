@@ -8,8 +8,9 @@ Two jobs:
 """
 
 import concurrent.futures
+from collections.abc import Iterator
 from functools import lru_cache
-from typing import Any, Dict, Iterator, List, Optional
+from typing import Any
 
 from google import genai
 from google.genai import errors as genai_errors
@@ -32,14 +33,14 @@ _GENERIC_FAILURE = "I could not generate an answer right now. Please try again i
 
 
 @lru_cache(maxsize=1)
-def get_gemini_client() -> Optional[genai.Client]:
+def get_gemini_client() -> genai.Client | None:
     """One SDK client per process (also used by post-call analysis)."""
     if not settings.GEMINI_API_KEY:
         return None
     return genai.Client(api_key=settings.GEMINI_API_KEY)
 
 
-def format_numbered_context(chunks: List[RetrievedChunk]) -> str:
+def format_numbered_context(chunks: list[RetrievedChunk]) -> str:
     """Number KB passages so prompts can anchor on specific ones."""
     lines = []
     for i, c in enumerate(chunks, start=1):
@@ -52,7 +53,7 @@ def format_numbered_context(chunks: List[RetrievedChunk]) -> str:
 
 class GeminiService:
 
-    def __init__(self, *, model_name: Optional[str] = None):
+    def __init__(self, *, model_name: str | None = None):
         self._model_name = model_name or settings.GEMINI_MODEL
         self._config = genai_types.GenerateContentConfig(
             temperature=settings.GEMINI_TEMPERATURE,
@@ -70,9 +71,9 @@ class GeminiService:
     def stream_live(
         self,
         question: str,
-        chunks: List[RetrievedChunk],
+        chunks: list[RetrievedChunk],
         *,
-        conversation_context: Optional[Dict[str, Any]] = None,
+        conversation_context: dict[str, Any] | None = None,
     ) -> Iterator[str]:
         """
         Stream the raw intent-tagged response for one live turn. The first line
@@ -120,9 +121,9 @@ class GeminiService:
     def generate_answer(
         self,
         query: str,
-        chunks: List[RetrievedChunk],
+        chunks: list[RetrievedChunk],
         *,
-        conversation_context: Optional[Dict[str, Any]] = None,
+        conversation_context: dict[str, Any] | None = None,
     ) -> str:
         if get_gemini_client() is None:
             return "Configuration error: GEMINI_API_KEY is not set."

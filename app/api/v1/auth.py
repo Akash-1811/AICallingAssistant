@@ -3,8 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timedelta, timezone
-from typing import Optional
+from datetime import UTC, datetime, timedelta
 
 import bcrypt
 import jwt
@@ -16,8 +15,8 @@ from sqlalchemy.orm import Mapped, mapped_column
 from starlette.status import HTTP_401_UNAUTHORIZED
 from starlette.websockets import WebSocket
 
-from app.storage.call_store import Base, get_db
 from app.core.config import settings
+from app.storage.call_store import Base, get_db
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 bearer_scheme = HTTPBearer(auto_error=False)
@@ -31,16 +30,16 @@ class User(Base):
     id: Mapped[str] = mapped_column(String(36), primary_key=True)
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True)
     password_hash: Mapped[str] = mapped_column(String(255))
-    display_name: Mapped[Optional[str]] = mapped_column(String(120), nullable=True)
+    display_name: Mapped[str | None] = mapped_column(String(120), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+        DateTime(timezone=True), default=lambda: datetime.now(UTC)
     )
 
 
 class SignupBody(BaseModel):
     email: EmailStr
     password: str = Field(min_length=8, max_length=128)
-    display_name: Optional[str] = Field(default=None, max_length=120)
+    display_name: str | None = Field(default=None, max_length=120)
 
 
 class LoginBody(BaseModel):
@@ -51,7 +50,7 @@ class LoginBody(BaseModel):
 class UserOut(BaseModel):
     id: str
     email: str
-    display_name: Optional[str] = None
+    display_name: str | None = None
 
 
 class AuthResponse(BaseModel):
@@ -68,12 +67,12 @@ def verify_password(password: str, password_hash: str) -> bool:
 
 
 def create_token(user_id: str) -> str:
-    expire = datetime.now(timezone.utc) + timedelta(minutes=settings.JWT_EXPIRE_MINUTES)
+    expire = datetime.now(UTC) + timedelta(minutes=settings.JWT_EXPIRE_MINUTES)
     payload = {"sub": user_id, "exp": expire}
     return jwt.encode(payload, settings.JWT_SECRET, algorithm=ALGORITHM)
 
 
-def decode_token(token: str) -> Optional[str]:
+def decode_token(token: str) -> str | None:
     try:
         payload = jwt.decode(token, settings.JWT_SECRET, algorithms=[ALGORITHM])
     except jwt.PyJWTError:
@@ -87,7 +86,7 @@ def user_to_out(user: User) -> UserOut:
 
 
 async def get_current_user(
-    creds: Optional[HTTPAuthorizationCredentials] = Depends(bearer_scheme),
+    creds: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
 ) -> User:
     if creds is None or creds.scheme.lower() != "bearer":
         raise HTTPException(status_code=HTTP_401_UNAUTHORIZED, detail="Not authenticated")

@@ -4,17 +4,18 @@ relevant knowledge, then one streamed LLM call that both classifies the turn
 (question / opener / objection / closing) and writes the reply. The INTENT tag
 line is stripped here — the rep only ever sees the spoken lines.
 """
-from typing import Any, Callable, Dict, Iterator, List, Optional
+from collections.abc import Callable, Iterator
+from typing import Any
 
 from app.core.config import settings
 from app.core.logging import get_logger
 from app.core.telemetry import get_tracer
 from app.rag.answer_cache import get_answer_cache
+from app.rag.llm_factory import get_llm_service
 from app.rag.models import RetrievedChunk
 from app.rag.prompts import VALID_LIVE_INTENTS
-from app.rag.retriever import RAGRetriever
 from app.rag.query_cleanup import build_retrieval_query
-from app.rag.llm_factory import get_llm_service
+from app.rag.retriever import RAGRetriever
 
 logger = get_logger(__name__)
 
@@ -43,11 +44,11 @@ def extract_intent(line: str) -> str:
     return value if value in VALID_LIVE_INTENTS else _FALLBACK_INTENT
 
 
-def _sources_payload(chunks: List[RetrievedChunk]) -> List[Dict[str, Any]]:
-    out: List[Dict[str, Any]] = []
+def _sources_payload(chunks: list[RetrievedChunk]) -> list[dict[str, Any]]:
+    out: list[dict[str, Any]] = []
     max_len = settings.SOURCE_EXCERPT_MAX_CHARS
     for c in chunks:
-        item: Dict[str, Any] = {
+        item: dict[str, Any] = {
             "id": c.chunk_id,
             "excerpt": c.excerpt(max_len),
         }
@@ -61,7 +62,7 @@ def _sources_payload(chunks: List[RetrievedChunk]) -> List[Dict[str, Any]]:
     return out
 
 
-def _skip_answer_cache_for_session(conversation_context: Optional[Dict[str, Any]]) -> bool:
+def _skip_answer_cache_for_session(conversation_context: dict[str, Any] | None) -> bool:
     """Session memory changes optimal wording — avoid stale global cache hits."""
     if not conversation_context:
         return False
@@ -83,9 +84,9 @@ class RAGPipeline:
         query: str,
         *,
         realtime: bool = False,
-        conversation_context: Optional[Dict[str, Any]] = None,
-        retrieval_query: Optional[str] = None,
-    ) -> List[RetrievedChunk]:
+        conversation_context: dict[str, Any] | None = None,
+        retrieval_query: str | None = None,
+    ) -> list[RetrievedChunk]:
         # retrieval_query may merge earlier turns for better recall; the plain
         # query (current turn) is what the LLM is asked to answer.
         search_query = build_retrieval_query(
@@ -110,8 +111,8 @@ class RAGPipeline:
         self,
         query: str,
         *,
-        conversation_context: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
+        conversation_context: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """REST /ask path: plain grounded Q&A, non-streamed."""
         tracer = get_tracer()
         with tracer.start_as_current_span("rag.pipeline.run") as span:
@@ -165,7 +166,7 @@ class RAGPipeline:
                     "error": "llm_failed",
                     "from_cache": False,
                 }
-            out: Dict[str, Any] = {
+            out: dict[str, Any] = {
                 "query": query,
                 "answer": answer,
                 "sources": _sources_payload(chunks),
@@ -179,10 +180,10 @@ class RAGPipeline:
         self,
         question: str,
         *,
-        retrieval_query: Optional[str] = None,
-        conversation_context: Optional[Dict[str, Any]] = None,
-        is_cancelled: Optional[Callable[[], bool]] = None,
-    ) -> Iterator[Dict[str, Any]]:
+        retrieval_query: str | None = None,
+        conversation_context: dict[str, Any] | None = None,
+        is_cancelled: Callable[[], bool] | None = None,
+    ) -> Iterator[dict[str, Any]]:
         """
         Realtime path for one customer turn: retrieve, then stream the LLM's
         intent-tagged response. The tag line is stripped here — clients receive
@@ -237,7 +238,7 @@ class RAGPipeline:
         if cancelled():
             return
 
-        intent: Optional[str] = None
+        intent: str | None = None
         tag_buffer = ""
         full_answer = ""
         try:
@@ -286,7 +287,7 @@ class RAGPipeline:
         if cancelled():
             return
 
-        out: Dict[str, Any] = {
+        out: dict[str, Any] = {
             "type": "answer_done",
             "answer": full_answer.strip(),
             "intent": intent or _FALLBACK_INTENT,
@@ -298,7 +299,7 @@ class RAGPipeline:
         yield out
 
 
-_pipeline_singleton: Optional[RAGPipeline] = None
+_pipeline_singleton: RAGPipeline | None = None
 
 
 def get_rag_pipeline() -> RAGPipeline:

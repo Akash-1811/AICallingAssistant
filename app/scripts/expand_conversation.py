@@ -11,10 +11,11 @@ from __future__ import annotations
 
 import argparse
 import asyncio
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
-from sqlalchemy import delete, select
+from sqlalchemy import delete
 
+from app.analysis.post_call_analysis import run_post_call_analysis
 from app.storage.call_store import (
     Conversation,
     SuggestionRow,
@@ -22,7 +23,6 @@ from app.storage.call_store import (
     get_db,
     init_database,
 )
-from app.analysis.post_call_analysis import run_post_call_analysis
 
 DEFAULT_CONVERSATION_ID = "7d593e0a-aa11-4151-b42f-4258468098c3"
 LEAD_SPEAKER_ID = 1
@@ -69,7 +69,7 @@ SUGGESTIONS = [
 
 async def expand_and_analyze(conversation_id: str, *, run_analysis: bool = True) -> None:
     await init_database()
-    started = datetime.now(timezone.utc) - timedelta(minutes=19)
+    started = datetime.now(UTC) - timedelta(minutes=19)
     ended = started + timedelta(minutes=18, seconds=12)
 
     async with get_db() as session:

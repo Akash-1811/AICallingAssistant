@@ -6,7 +6,7 @@ a clean question for retrieval. Flow position: after speech-to-text, before RAG.
 import json
 import re
 import uuid
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from app.core.config import settings
 from app.core.logging import get_logger
@@ -99,7 +99,7 @@ def _looks_like_short_follow_up(text: str) -> bool:
     return False
 
 
-def _extract_best_query(turns: List[str]) -> str:
+def _extract_best_query(turns: list[str]) -> str:
     """
     Given the most recent N transcript turns, produce the sharpest
     retrieval query possible:
@@ -142,7 +142,7 @@ def _session_key(session_id: str) -> str:
     return f"aicall:session:{session_id}"
 
 
-def _normalize_history_item(item: Any) -> Dict[str, Any]:
+def _normalize_history_item(item: Any) -> dict[str, Any]:
     if isinstance(item, str):
         return {"text": item, "speaker": 0}
     if isinstance(item, dict) and "text" in item:
@@ -155,7 +155,7 @@ def _normalize_history_item(item: Any) -> Dict[str, Any]:
     return {"text": "", "speaker": 0}
 
 
-def _migrate_session_state(state: Dict[str, Any]) -> Dict[str, Any]:
+def _migrate_session_state(state: dict[str, Any]) -> dict[str, Any]:
     raw_hist = state.get("history") or []
     state["history"] = [_normalize_history_item(x) for x in raw_hist]
     if "last_query" not in state:
@@ -163,14 +163,14 @@ def _migrate_session_state(state: Dict[str, Any]) -> Dict[str, Any]:
     return state
 
 
-def _speakers_in_history(history: List[Dict[str, Any]]) -> List[int]:
+def _speakers_in_history(history: list[dict[str, Any]]) -> list[int]:
     seen = {int(h["speaker"]) for h in history if h.get("text")}
     return sorted(seen)
 
 
 def _lead_turn_strings(
-    history: List[Dict[str, Any]], lead_id: Optional[int]
-) -> List[str]:
+    history: list[dict[str, Any]], lead_id: int | None
+) -> list[str]:
     if lead_id is None:
         return []
     return [
@@ -180,7 +180,7 @@ def _lead_turn_strings(
     ]
 
 
-def _lead_speaker_id(speakers_seen: List[int]) -> Optional[int]:
+def _lead_speaker_id(speakers_seen: list[int]) -> int | None:
     """
     Speaker ids are physical audio channels: 0 = the rep's mic, 1 = the shared
     meeting-tab audio (the customer). Once the tab has spoken, channel 1 is the
@@ -197,8 +197,8 @@ def _lead_speaker_id(speakers_seen: List[int]) -> Optional[int]:
 class ConversationManager:
 
     def __init__(self):
-        self._memory: Dict[str, Dict[str, Any]] = {}
-        self._redis: Optional[Any] = None
+        self._memory: dict[str, dict[str, Any]] = {}
+        self._redis: Any | None = None
         self._redis_failed = False
 
     async def _get_redis(self):
@@ -242,7 +242,7 @@ class ConversationManager:
             self._memory[session_id] = dict(empty)
         return session_id
 
-    async def _load(self, session_id: str) -> Dict[str, Any]:
+    async def _load(self, session_id: str) -> dict[str, Any]:
         empty = {"history": [], "last_query": None, "last_suggestion": None}
         r = await self._get_redis()
         if r:
@@ -250,7 +250,7 @@ class ConversationManager:
             return _migrate_session_state(json.loads(raw) if raw else empty)
         return _migrate_session_state(self._memory.get(session_id, empty))
 
-    async def _save(self, session_id: str, state: Dict[str, Any]) -> None:
+    async def _save(self, session_id: str, state: dict[str, Any]) -> None:
         r = await self._get_redis()
         if r:
             await r.setex(
@@ -263,7 +263,7 @@ class ConversationManager:
 
     async def add_transcript(self, session_id: str, text: str) -> None:
         state = await self._load(session_id)
-        history: List[Dict[str, Any]] = state.setdefault("history", [])
+        history: list[dict[str, Any]] = state.setdefault("history", [])
         history.append({"text": text, "speaker": 0})
         if len(history) > settings.MAX_HISTORY_PER_SESSION:
             state["history"] = history[-settings.MAX_HISTORY_PER_SESSION :]
@@ -271,13 +271,13 @@ class ConversationManager:
 
     async def get_context(self, session_id: str, window: int = 5) -> str:
         state = await self._load(session_id)
-        history: List[Dict[str, Any]] = state.get("history", [])
+        history: list[dict[str, Any]] = state.get("history", [])
         texts = [str(h.get("text", "")) for h in history[-window:]]
         return " ".join(texts)
 
     async def record_turn(
-        self, session_id: str, segments: List[TranscriptSegment]
-    ) -> Tuple[str, str, List[int], Optional[int]]:
+        self, session_id: str, segments: list[TranscriptSegment]
+    ) -> tuple[str, str, list[int], int | None]:
         """
         Append channel-tagged segments, return:
         (raw_lead_context, focused_query, speakers_seen, lead_speaker_id).
@@ -285,7 +285,7 @@ class ConversationManager:
         focused_query uses only the lead's (customer's) turns.
         """
         state = await self._load(session_id)
-        history: List[Dict[str, Any]] = state.setdefault("history", [])
+        history: list[dict[str, Any]] = state.setdefault("history", [])
         for seg in segments:
             history.append({"text": seg.text, "speaker": int(seg.speaker)})
 
@@ -310,10 +310,10 @@ class ConversationManager:
         state["last_suggestion"] = text
         await self._save(session_id, state)
 
-    async def get_rag_context(self, session_id: str) -> Dict[str, Any]:
+    async def get_rag_context(self, session_id: str) -> dict[str, Any]:
         """Prior turn + recent lead speech for session-aware prompts."""
         state = await self._load(session_id)
-        history: List[Dict[str, Any]] = state.get("history") or []
+        history: list[dict[str, Any]] = state.get("history") or []
         lead = _lead_speaker_id(_speakers_in_history(history))
         lead_turns = _lead_turn_strings(history, lead)
         recent = " ".join(lead_turns[-2:]) if lead_turns else ""
