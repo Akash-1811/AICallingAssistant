@@ -26,7 +26,7 @@ _QUESTION_STARTERS = frozenset(
 )
 
 
-def looks_like_closing_or_acknowledgement(text: str) -> bool:
+def is_closing_pleasantry(text: str) -> bool:
     """
     Pure pleasantry — "thank you", "great to hear this" — with no question and
     no new topic. Generating another pitch here makes the rep sound robotic;

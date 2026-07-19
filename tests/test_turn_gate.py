@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.live.turn_gate import looks_like_closing_or_acknowledgement
+from app.live.turn_gate import is_closing_pleasantry
 
 
 @pytest.mark.parametrize(
@@ -17,7 +17,7 @@ from app.live.turn_gate import looks_like_closing_or_acknowledgement
     ],
 )
 def test_pure_pleasantries_are_closing(turn: str) -> None:
-    assert looks_like_closing_or_acknowledgement(turn) is True
+    assert is_closing_pleasantry(turn) is True
 
 
 @pytest.mark.parametrize(
@@ -35,7 +35,7 @@ def test_pure_pleasantries_are_closing(turn: str) -> None:
     ],
 )
 def test_real_turns_are_not_closing(turn: str) -> None:
-    assert looks_like_closing_or_acknowledgement(turn) is False
+    assert is_closing_pleasantry(turn) is False
 
 
 class TestExtractIntent:

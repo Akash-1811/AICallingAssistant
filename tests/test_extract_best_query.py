@@ -106,7 +106,7 @@ class TestConversationManagerLeadOnlyScenarios:
         async def scenario():
             cm = ConversationManager()
             sid = await cm.create_session()
-            _, fq, speakers, lead = await cm.add_segments_and_get_focused_query(
+            _, fq, speakers, lead = await cm.record_turn(
                 sid,
                 [
                     TranscriptSegment(text="Thanks for hopping on today.", speaker=0),
@@ -135,7 +135,7 @@ class TestConversationManagerLeadOnlyScenarios:
         async def scenario():
             cm = ConversationManager()
             sid = await cm.create_session()
-            _, fq, _, lead = await cm.add_segments_and_get_focused_query(
+            _, fq, _, lead = await cm.record_turn(
                 sid,
                 [
                     TranscriptSegment(
@@ -168,7 +168,7 @@ class TestConversationManagerLeadOnlyScenarios:
         async def scenario():
             cm = ConversationManager()
             sid = await cm.create_session()
-            _, fq, speakers, lead = await cm.add_segments_and_get_focused_query(
+            _, fq, speakers, lead = await cm.record_turn(
                 sid,
                 [
                     TranscriptSegment(

@@ -270,7 +270,7 @@ class ConversationManager:
         texts = [str(h.get("text", "")) for h in history[-window:]]
         return " ".join(texts)
 
-    async def add_segments_and_get_focused_query(
+    async def record_turn(
         self, session_id: str, segments: List[TranscriptSegment]
     ) -> Tuple[str, str, List[int], Optional[int]]:
         """

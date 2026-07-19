@@ -1,10 +1,12 @@
-"""query_normalize: ASR cleanup, language hint, duplicate detection."""
+"""Query cleanup contract tests: normalization, dedup, and BHK cache-compat slots."""
 
 from app.core.config import settings
 from app.rag.query_cleanup import (
+    config_slots,
     dominant_language_hint,
     normalize_live_query,
     queries_are_near_duplicate,
+    semantic_cache_compatible,
 )
 
 
@@ -46,3 +48,32 @@ def test_queries_near_duplicate_false_different_bhk(monkeypatch):
 def test_queries_near_duplicate_disabled(monkeypatch):
     monkeypatch.setattr(settings, "QUERY_DEDUP_ENABLED", False)
     assert queries_are_near_duplicate("same words", "same words") is False
+
+
+class TestConfigSlots:
+    def test_two_and_three_bhk(self) -> None:
+        assert config_slots("What is the price of 2 BHK and 3 BHK?") == frozenset(
+            {"2bhk", "3bhk"}
+        )
+
+    def test_spoken_numbers(self) -> None:
+        assert config_slots("two BHK flat") == frozenset({"2bhk"})
+        assert config_slots("three bhk cost") == frozenset({"3bhk"})
+
+
+class TestSemanticCacheCompatible:
+    def test_same_slots(self) -> None:
+        assert semantic_cache_compatible(
+            "what is 2bhk price in thane",
+            "price for 2 bhk raymond",
+        )
+
+    def test_different_slots_reject(self) -> None:
+        assert not semantic_cache_compatible(
+            "what is 3bhk price",
+            "what is 2bhk price",
+        )
+
+    def test_legacy_no_cached_norm(self) -> None:
+        assert semantic_cache_compatible("generic pricing question", None)
+        assert not semantic_cache_compatible("what is 3bhk price", None)

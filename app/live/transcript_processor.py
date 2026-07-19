@@ -9,7 +9,7 @@ from app.core.logging import get_logger
 from app.live.conversation_manager import (
     conversation_manager,
 )
-from app.live.turn_gate import looks_like_closing_or_acknowledgement
+from app.live.turn_gate import is_closing_pleasantry
 from app.rag.pipeline import get_rag_pipeline
 from app.rag.query_cleanup import (
     dominant_language_hint,
@@ -62,7 +62,7 @@ class TranscriptProcessor:
                 focused_query,
                 speakers_seen,
                 lead,
-            ) = await conversation_manager.add_segments_and_get_focused_query(
+            ) = await conversation_manager.record_turn(
                 session_id, segments
             )
 
@@ -107,7 +107,7 @@ class TranscriptProcessor:
             # focused_query (which may merge earlier turns) is for retrieval.
             question = normalize_live_query(lead_only_batch)
 
-            if looks_like_closing_or_acknowledgement(question):
+            if is_closing_pleasantry(question):
                 logger.debug(
                     "session=%s skipping closing/acknowledgement turn: %r",
                     session_id,
