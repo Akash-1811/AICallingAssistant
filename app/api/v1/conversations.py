@@ -13,17 +13,23 @@ Example::
 from __future__ import annotations
 
 import asyncio
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
+import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import FileResponse
+from pydantic import BaseModel, Field
 from sqlalchemy import desc, select
 
 from app.analysis.analytics_summary import build_analytics_summary, range_start_time
 from app.analysis.post_call_analysis import refresh_call_metrics, schedule_post_call_analysis
-from app.api.v1.auth import get_current_user
+from app.analysis.speech_metrics import compute_speech_metrics
+from app.api.v1.auth import User, get_current_user
 from app.core.config import settings
+from app.scripts.demo_analysis import build_demo_analysis
+from app.scripts.demo_transcripts import build_scenarios
 from app.storage.call_store import (
     Conversation,
     ConversationAnalysis,
@@ -217,6 +223,135 @@ async def get_audio(conversation_id: str):
         media_type="audio/wav",
         filename=f"{conversation_id}.wav",
     )
+
+
+class SeedDemoBody(BaseModel):
+    count: int = Field(default=10, ge=1, le=25)
+    reset: bool = False
+
+
+@router.post("/seed-demo")
+async def seed_demo_calls(body: SeedDemoBody, user: User = Depends(get_current_user)) -> dict:
+    """
+    Insert production-quality demo calls (long transcripts + ready analysis) for the current user.
+
+    Calls are tagged in `Conversation.extra` so they can be reset per-user.
+    """
+    ensure_database_enabled()
+    rep_name = (user.display_name or user.email.split("@")[0]).strip() if user.email else "Rep"
+    templates = build_scenarios(rep_name)
+    if not templates:
+        raise HTTPException(status_code=500, detail="No demo scenarios available")
+
+    # Build the requested number of scenarios with unique ids.
+    scenarios = []
+    for i in range(body.count):
+        src = templates[i % len(templates)]
+        scenario = {**src}
+        scenario["id"] = str(uuid.uuid4())
+        scenario["label"] = f"{src.get('label', 'Demo call')} #{i+1}"
+        scenario["days_ago"] = int(src.get("days_ago") or 0) + (i // len(templates))
+        scenarios.append(scenario)
+
+    async with get_db() as session:
+        if body.reset:
+            result = await session.execute(select(Conversation).where(Conversation.workspace_id == user.id))
+            for conv in result.scalars().all():
+                extra = conv.extra or {}
+                if extra.get("source") == "seed_demo_api":
+                    await session.delete(conv)
+            await session.commit()
+
+        for scenario in scenarios:
+            conversation_id = scenario["id"]
+            transcript = scenario["transcript"]
+            suggestions = scenario.get("suggestions") or []
+
+            duration_sec = max(1, round((transcript[-1]["end_ms"] - transcript[0]["start_ms"]) / 1000))
+            # Spread calls over time so charts look realistic.
+            started = datetime.now(UTC) - timedelta(days=int(scenario.get("days_ago") or 0), minutes=duration_sec // 60)
+            ended = started + timedelta(seconds=duration_sec)
+
+            conv = Conversation(
+                id=conversation_id,
+                status="ready",
+                lead_speaker_id=1,
+                audio_channels=1,
+                rep_label=rep_name,
+                workspace_id=user.id,
+                started_at=started,
+                ended_at=ended,
+                duration_sec=duration_sec,
+                extra={
+                    "source": "seed_demo_api",
+                    "label": scenario.get("label"),
+                    "seed_owner_user_id": user.id,
+                },
+            )
+            session.add(conv)
+
+            for line in transcript:
+                session.add(
+                    TranscriptSegmentRow(
+                        conversation_id=conversation_id,
+                        speaker_id=line["speaker_id"],
+                        role=line["role"],
+                        text=line["text"],
+                        start_ms=line["start_ms"],
+                        end_ms=line["end_ms"],
+                        word_count=len(line["text"].split()),
+                    )
+                )
+            for sug in suggestions:
+                session.add(
+                    SuggestionRow(
+                        conversation_id=conversation_id,
+                        generation_id=sug.get("generation_id"),
+                        trigger_query=sug.get("trigger_query") or "",
+                        suggestion_text=sug.get("suggestion_text") or "",
+                        from_cache=bool(sug.get("from_cache", False)),
+                        sources=[],
+                        latency_ms=sug.get("latency_ms"),
+                    )
+                )
+
+            # Compute metrics + attach deterministic demo analysis (fast, no external calls).
+            segment_dicts = [
+                {
+                    "speaker_id": line["speaker_id"],
+                    "role": line["role"],
+                    "text": line["text"],
+                    "start_ms": line["start_ms"],
+                    "end_ms": line["end_ms"],
+                }
+                for line in transcript
+            ]
+            suggestion_dicts = [
+                {
+                    "trigger_query": item.get("trigger_query") or "",
+                    "suggestion_text": item.get("suggestion_text") or "",
+                    "from_cache": bool(item.get("from_cache", False)),
+                    "latency_ms": item.get("latency_ms"),
+                }
+                for item in suggestions
+            ]
+            metrics = compute_speech_metrics(segment_dicts, suggestion_dicts, lead_speaker_id=1)
+            analysis, metrics = build_demo_analysis(conversation_id, rep_name, metrics, segment_dicts)
+            session.add(
+                ConversationAnalysis(
+                    conversation_id=conversation_id,
+                    version=1,
+                    model="seed-demo-api",
+                    status="ready",
+                    metrics=metrics,
+                    analysis=analysis.model_dump(),
+                    created_at=ended,
+                )
+            )
+
+        await session.commit()
+
+    return {"seeded": len(scenarios)}
 
 
 @router.post("/{conversation_id}/reanalyze")

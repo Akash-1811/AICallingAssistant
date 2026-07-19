@@ -84,6 +84,7 @@ export type AnalyticsCallRow = {
   duration_sec: number | null;
   status: string;
   rep_label: string | null;
+  has_audio: boolean;
   interest_score: number | null;
   conversion_pct: number | null;
   buying_signals: number;

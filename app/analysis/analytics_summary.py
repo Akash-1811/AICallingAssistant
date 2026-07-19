@@ -4,8 +4,10 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 from typing import Any
 
+from app.core.config import settings
 from app.storage.call_store import Conversation, ConversationAnalysis
 
 
@@ -137,12 +139,20 @@ def build_call_analytics_row(
     ratio = metrics.get("talk_listen_ratio") or {}
     rep_talk = ratio.get("rep_pct")
     rep_talk_pct = round(float(rep_talk), 1) if rep_talk is not None else None
+    extra = conv.extra or {}
+    audio_path = extra.get("audio_wav_path")
+    if isinstance(audio_path, str) and audio_path.strip():
+        has_audio = Path(audio_path).exists()
+    else:
+        has_audio = (Path(settings.CALL_RECORDINGS_DIR) / f"{conv.id}.wav").exists()
+
     return {
         "id": conv.id,
         "started_at": conv.started_at.isoformat() if conv.started_at else None,
         "duration_sec": conv.duration_sec,
         "status": conv.status,
         "rep_label": conv.rep_label,
+        "has_audio": has_audio,
         "interest_score": interest,
         "conversion_pct": conversion,
         "buying_signals": signals["buying_signals"] if analysis_row else 0,

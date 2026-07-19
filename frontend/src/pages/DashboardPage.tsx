@@ -747,8 +747,10 @@ export function DashboardPage() {
                                       ? "Pause audio"
                                       : "Play audio"
                                 }
-                                title={isActive && !paused ? "Pause" : "Play"}
-                                disabled={isBusy}
+                                title={
+                                  row.has_audio ? (isActive && !paused ? "Pause" : "Play") : "No audio for this call"
+                                }
+                                disabled={isBusy || !row.has_audio}
                                 onClick={() => void togglePlay(row.id)}
                               >
                                 <span className={styles.playIcon} aria-hidden="true">
