@@ -60,11 +60,11 @@ export function buildSignalBars(summary: AnalyticsSummary | null) {
 
 export function describeSignalBalance(net: number, analyzed: number): string {
   if (!analyzed) return "Review a few calls first to see interest and concerns.";
-  if (net > 0) return `${net} more sign${net === 1 ? "" : "s"} of interest than concern — momentum looks good.`;
+  if (net > 0) return `${net} more sign${net === 1 ? "" : "s"} of interest than concern. Momentum looks good.`;
   if (net < 0) {
-    return `${Math.abs(net)} more concern${net === -1 ? "" : "s"} than interest — worth a careful follow-up.`;
+    return `${Math.abs(net)} more concern${net === -1 ? "" : "s"} than interest. Worth a careful follow-up.`;
   }
-  return "Interest and concerns are balanced — follow up on open questions.";
+  return "Interest and concerns are balanced. Follow up on open questions.";
 }
 
 export function describeCoaching(
@@ -78,7 +78,7 @@ export function describeCoaching(
     return "The customer did most of the talking. Guide the call a bit more and suggest clear next steps.";
   }
   if (snapshot.avg_rep_questions < 5) {
-    return "Talk time looks balanced, but you could ask more questions — aim for at least 5 per call.";
+    return "Talk time looks balanced, but you could ask more questions. Aim for at least 5 per call.";
   }
-  return "Good balance — you are listening well and asking enough questions.";
+  return "Good balance. You are listening well and asking enough questions.";
 }

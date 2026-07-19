@@ -80,7 +80,7 @@ export function SuggestionPanel({
           ) : (
             <p className={styles.emptyText}>
               {isLive
-                ? "Listening — a suggested line will appear after the prospect speaks."
+                ? "Listening. A suggested line will appear after the prospect speaks."
                 : "Start a session to receive real-time suggestions."}
             </p>
           )}

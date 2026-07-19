@@ -103,7 +103,7 @@ export function getDrilldownMeta(
     case "volume": {
       const bucket = summary.weekly_volume.find((row) => row.label === drilldown.period);
       return {
-        title: `${drilldown.period} — call count`,
+        title: `${drilldown.period}: call count`,
         subtitle: `${subtitle} in this period`,
         stats: [
           { label: "Calls in period", value: String(bucket?.count ?? calls.length) },
@@ -147,8 +147,8 @@ export function getDrilldownMeta(
         title: drilldown.signal === "buying" ? "Showed interest" : "Had concerns",
         subtitle:
           drilldown.signal === "buying"
-            ? `${subtitle} — most interest first`
-            : `${subtitle} — most concerns first`,
+            ? `${subtitle} (most interest first)`
+            : `${subtitle} (most concerns first)`,
         stats: [
           { label: "Interest signs", value: String(buying) },
           { label: "Concerns", value: String(objections) },

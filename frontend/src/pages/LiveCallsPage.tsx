@@ -89,12 +89,12 @@ export function LiveCallsPage() {
     if (allSuggestions.length === 0) {
       return {
         lead: "Let the prospect finish",
-        rest: " — suggestions sharpen after a full thought.",
+        rest: ". Suggestions sharpen after a full thought.",
       };
     }
     return {
       lead: "Stay concise",
-      rest: " — pair the live transcript with the primary card and cite sources when challenged.",
+      rest: ". Pair the live transcript with the primary card and cite sources when challenged.",
     };
   }, [isLive, allSuggestions.length]);
 
@@ -104,12 +104,12 @@ export function LiveCallsPage() {
       <p className={styles.sentimentInsight}>
         {liveStats.repPct > 65 ? (
           <>
-            You're doing most of the talking — pause and ask an{" "}
+            You're doing most of the talking. Pause and ask an{" "}
             <strong className={styles.sentimentKeyword}>open question</strong> so the customer can share priorities.
           </>
         ) : (
           <>
-            Healthy balance — the customer is talking. Keep{" "}
+            Healthy balance. The customer is talking. Keep{" "}
             <strong className={styles.sentimentKeyword}>listening</strong> and answer what they actually ask.
           </>
         )}

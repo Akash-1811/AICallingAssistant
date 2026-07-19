@@ -360,7 +360,8 @@ export function AnalyticsPage() {
             Export report
           </button>
           <p className={styles.exportHint}>
-            {exportNote ?? `Spreadsheet for the last ${range === "7d" ? "7 days" : range === "30d" ? "30 days" : "90 days"} — summary and call list.`}
+            {exportNote ??
+              `Spreadsheet for the last ${range === "7d" ? "7 days" : range === "30d" ? "30 days" : "90 days"} (summary and call list).`}
           </p>
         </div>
 

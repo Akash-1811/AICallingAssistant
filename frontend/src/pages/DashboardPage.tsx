@@ -44,15 +44,15 @@ const TALK_VERDICTS: Record<
 > = {
   balanced: {
     text: "Good balance",
-    note: "Right in the healthy range — customers get room to talk.",
+    note: "Right in the healthy range. Customers get room to talk.",
   },
   rep_heavy: {
     text: "Talking too much",
-    note: "Best range is 35–55% — try letting the customer talk more.",
+    note: "Best range is 35–55%. Try letting the customer talk more.",
   },
   prospect_heavy: {
     text: "Customer leads the talking",
-    note: "Great listening — make sure key questions still get asked.",
+    note: "Great listening. Make sure key questions still get asked.",
   },
 };
 
@@ -560,7 +560,7 @@ export function DashboardPage() {
                 </li>
               </ul>
               <p className={styles.cardFoot}>
-                Things customers said that show interest — like asking about price or a site visit —
+                Things customers said that show interest, like asking about price or a site visit,
                 versus doubts they raised. Click either to see which calls.
               </p>
             </section>
@@ -570,7 +570,7 @@ export function DashboardPage() {
                 <div>
                   <h2 className={styles.chartTitle}>Calls over time</h2>
                   <p className={styles.chartSub}>
-                    Each bar is one {range === "7d" ? "day" : "week"} — click a bar to see its calls
+                    Each bar is one {range === "7d" ? "day" : "week"}. Click a bar to see its calls.
                   </p>
                 </div>
               </div>
@@ -595,7 +595,7 @@ export function DashboardPage() {
                             type="button"
                             className={`${styles.plotBar} ${isPeak ? styles.plotBarHi : ""}`}
                             style={{ height: `${Math.max((bucket.count / maxVolume) * 100, 2)}%` }}
-                            title={`${bucket.label}: ${bucket.count} ${bucket.count === 1 ? "call" : "calls"} — click to view`}
+                            title={`${bucket.label}: ${bucket.count} ${bucket.count === 1 ? "call" : "calls"}. Click to view.`}
                             disabled={bucket.count === 0}
                             aria-label={`${bucket.label}: ${bucket.count} calls — view details`}
                             onClick={() => openBucketModal(bucket.label, bucket.call_ids)}
@@ -653,7 +653,6 @@ export function DashboardPage() {
               <div className={styles.chartHead}>
                 <div>
                   <h2 className={styles.chartTitle}>How your team talks on calls</h2>
-                  <p className={styles.chartSub}>Measured from real call recordings</p>
                 </div>
               </div>
               <p className={styles.verdict}>{verdict?.text ?? "—"}</p>
@@ -703,7 +702,7 @@ export function DashboardPage() {
                     />
                   </div>
                   <p className={styles.coachNote}>
-                    Aim for 6 or more — questions uncover what the customer wants.
+                    Aim for 6 or more. Questions uncover what the customer wants.
                   </p>
                 </li>
               </ul>
