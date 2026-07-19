@@ -1,299 +1,379 @@
-import { useEffect, useState } from "react";
+/**
+ * Landing page: the owner's 10-second answer to "how are my sales calls going,
+ * and what needs my attention?". Every number comes from the analytics summary
+ * endpoint — measured from real calls or AI-assessed with evidence. Nothing is
+ * invented, and the copy is written for non-technical users.
+ */
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   formatDuration,
   formatTimestamp,
-  listConversations,
-  type ConversationSummary,
+  getAnalyticsSummary,
+  type AnalyticsCallRow,
+  type AnalyticsSummary,
 } from "../api/conversations";
 import appStyles from "../App.module.css";
 import styles from "./DashboardPage.module.css";
 
-const VELOCITY_DAYS = [
-  { label: "Mon", pct: 38, highlight: false },
-  { label: "Tue", pct: 52, highlight: false },
-  { label: "Wed", pct: 45, highlight: false },
-  { label: "Thu", pct: 61, highlight: false },
-  { label: "Fri", pct: 72, highlight: true, tag: "29%" },
-  { label: "Sat", pct: 28, highlight: false },
-  { label: "Sun", pct: 34, highlight: false },
+type Range = "7d" | "30d" | "90d";
+
+const RANGE_OPTIONS: { id: Range; label: string }[] = [
+  { id: "7d", label: "7 days" },
+  { id: "30d", label: "30 days" },
+  { id: "90d", label: "90 days" },
 ];
 
-const SESSIONS_PLACEHOLDER = [
-  {
-    id: "#ACC-9022",
-    name: "Jonathan K.",
-    vertical: "Real Estate Vertical",
-    initials: "JK",
-    outcome: "converted" as const,
-    duration: "09:42",
+const OUTCOME_LABELS: Record<AnalyticsCallRow["outcome"], { text: string; tone: "good" | "warn" | "risk" | "neutral" }> = {
+  qualified: { text: "Strong lead", tone: "good" },
+  follow_up: { text: "Needs follow-up", tone: "warn" },
+  at_risk: { text: "May slip away", tone: "risk" },
+  nurture: { text: "Still deciding", tone: "neutral" },
+  pending: { text: "Being reviewed", tone: "neutral" },
+};
+
+const TALK_VERDICTS: Record<AnalyticsSummary["coaching_snapshot"]["talk_balance_label"], { text: string; note: string }> = {
+  balanced: {
+    text: "Good balance",
+    note: "Right in the healthy range — customers get room to talk.",
   },
-  {
-    id: "#ACC-9018",
-    name: "Maria Santos",
-    vertical: "FinTech",
-    initials: "MS",
-    outcome: "nurturing" as const,
-    duration: "06:15",
+  rep_heavy: {
+    text: "Talking too much",
+    note: "Best range is 35–55% — try letting the customer talk more.",
   },
-  {
-    id: "#ACC-9014",
-    name: "David Chen",
-    vertical: "Healthcare",
-    initials: "DC",
-    outcome: "unresponsive" as const,
-    duration: "02:03",
+  prospect_heavy: {
+    text: "Customer leads the talking",
+    note: "Great listening — make sure key questions still get asked.",
   },
-];
+};
 
 export function DashboardPage() {
-  const [chartScale, setChartScale] = useState<"D" | "W" | "M">("M");
-  const [recentCalls, setRecentCalls] = useState<ConversationSummary[]>([]);
-  const [totalCalls, setTotalCalls] = useState<number | null>(null);
+  const [range, setRange] = useState<Range>("30d");
+  const [summary, setSummary] = useState<AnalyticsSummary | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    void listConversations(5)
+    let cancelled = false;
+    setLoading(true);
+    getAnalyticsSummary(range)
       .then((data) => {
-        setRecentCalls(data.items);
-        setTotalCalls(data.items.length > 0 ? data.items.length : 0);
+        if (!cancelled) {
+          setSummary(data);
+          setError(null);
+        }
       })
-      .catch(() => {
-        setRecentCalls([]);
+      .catch((e) => {
+        if (!cancelled) setError(e instanceof Error ? e.message : "Could not load your numbers");
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
       });
-  }, []);
+    return () => {
+      cancelled = true;
+    };
+  }, [range]);
+
+  const recentCalls = useMemo(() => (summary?.calls ?? []).slice(0, 5), [summary]);
+  const maxVolume = useMemo(
+    () => Math.max(...(summary?.weekly_volume ?? []).map((b) => b.count), 1),
+    [summary]
+  );
+
+  const hasCalls = (summary?.total_conversations ?? 0) > 0;
+  const pipeline = summary?.pipeline_outlook;
+  const stillDeciding = summary
+    ? Math.max(
+        0,
+        summary.analyzed_conversations -
+          (pipeline?.qualified_calls ?? 0) -
+          (pipeline?.follow_up_calls ?? 0) -
+          (pipeline?.at_risk_calls ?? 0)
+      )
+    : 0;
+  const coach = summary?.coaching_snapshot;
+  const verdict = coach ? TALK_VERDICTS[coach.talk_balance_label] : null;
 
   return (
     <div className={appStyles.content}>
       <div className={`${appStyles.mainCol} ${styles.dashMain}`}>
         <header className={styles.pageHeader}>
-          <p className={styles.pageEyebrow}>System performance hub</p>
-          <h1 className={styles.pageTitle}>
-            <span className={styles.pageTitleDark}>Intelligence </span>
-            <span className={styles.pageTitleAccent}>Dashboard.</span>
-          </h1>
+          <div>
+            <p className={styles.pageEyebrow}>Your sales at a glance</p>
+            <h1 className={styles.pageTitle}>
+              <span className={styles.pageTitleDark}>Intelligence </span>
+              <span className={styles.pageTitleAccent}>Dashboard.</span>
+            </h1>
+          </div>
+          <div className={styles.rangeToggle} role="group" aria-label="Time period">
+            {RANGE_OPTIONS.map((opt) => (
+              <button
+                key={opt.id}
+                type="button"
+                className={`${styles.rangeBtn} ${range === opt.id ? styles.rangeBtnOn : ""}`}
+                aria-pressed={range === opt.id}
+                onClick={() => setRange(opt.id)}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
         </header>
 
-        <section className={styles.kpiGrid} aria-label="Key metrics">
-          <article className={styles.capacityCard}>
-            <span className={styles.capacityBadge}>Active capacity</span>
-            <p className={styles.capacityValue}>98.4%</p>
-            <p className={styles.capacityBody}>
-              AI processing efficiency across inference clusters—latency within SLO for the current load envelope.
+        {error ? <p className={styles.error}>{error}</p> : null}
+
+        {!loading && !hasCalls && !error ? (
+          <section className={styles.emptyCard}>
+            <h2 className={styles.emptyTitle}>No calls yet</h2>
+            <p className={styles.emptyBody}>
+              Start your first live session and your numbers will appear here automatically.
             </p>
-            <div className={styles.capacityFooter}>
-              <span className={styles.capacityFooterLabel}>Cluster nodes · 128 online</span>
-              <span className={styles.nodeDots} aria-hidden="true">
-                <span />
-                <span />
-                <span />
-                <span />
-              </span>
-            </div>
-          </article>
-
-          <article className={`${styles.miniCard} ${styles.sentimentCard}`}>
-            <p className={styles.miniLabel}>Avg. sentiment</p>
-            <p className={styles.miniEmphasis}>Positive</p>
-            <div className={styles.sentimentBar}>
-              <div className={styles.sentimentFill} style={{ width: "82.4%" }} />
-            </div>
-            <p className={styles.miniFoot}>82.4% neural confidence</p>
-          </article>
-
-          <article className={`${styles.miniCard} ${styles.orangeCard}`}>
-            <p className={styles.miniLabelOrange}>Total sessions</p>
-            <p className={styles.sessionsValue}>{totalCalls ?? "—"}</p>
-            <Link to="/analytics" className={styles.reportBtn}>
-              Generate report
+            <Link to="/live" className={styles.emptyBtn}>
+              Start a session
             </Link>
-          </article>
+          </section>
+        ) : (
+          <>
+            <section className={styles.kpiGrid} aria-label="Key numbers">
+              <article className={styles.heroCard}>
+                <p className={styles.cardLabel}>Where your leads stand</p>
+                <p className={styles.heroValue}>
+                  {pipeline?.qualified_calls ?? "—"}
+                  <span className={styles.heroUnit}> strong leads</span>
+                </p>
+                <p className={styles.heroBody}>
+                  Counted from what each customer actually said on the call.
+                </p>
+                <div className={styles.pillRow}>
+                  <span className={`${styles.pill} ${styles.pillWarn}`}>
+                    <strong>{pipeline?.follow_up_calls ?? 0}</strong> need a follow-up call
+                  </span>
+                  <span className={`${styles.pill} ${styles.pillRisk}`}>
+                    <strong>{pipeline?.at_risk_calls ?? 0}</strong> may slip away
+                  </span>
+                  <span className={`${styles.pill} ${styles.pillNeutral}`}>
+                    <strong>{stillDeciding}</strong> still deciding
+                  </span>
+                </div>
+              </article>
 
-          <article className={`${styles.miniCard} ${styles.leadCard}`}>
-            <p className={styles.miniLabel}>Lead conv.</p>
-            <p className={styles.convValue}>24.2%</p>
-            <p className={styles.convTrend}>+4.1% vs PW</p>
-            <div className={styles.leadSpark} aria-hidden="true">
-              {[40, 55, 48, 62, 58].map((h, i) => (
-                <span key={i} className={styles.leadSparkBar} style={{ height: `${h}%` }} />
-              ))}
-            </div>
-            <p className={styles.leadFoot}>SQL → won, blended across inbound and partner dialer.</p>
-          </article>
-        </section>
+              <article className={styles.miniCard}>
+                <p className={styles.cardLabel}>Customer interest</p>
+                <p className={styles.miniValue}>
+                  {summary ? `${summary.avg_interest_score}%` : "—"}
+                </p>
+                <div className={styles.meterTrack}>
+                  <div
+                    className={styles.meterFill}
+                    style={{ width: `${summary?.avg_interest_score ?? 0}%` }}
+                  />
+                </div>
+                <p className={styles.miniFoot}>
+                  How keen customers sounded, from {summary?.analyzed_conversations ?? 0} reviewed{" "}
+                  {summary?.analyzed_conversations === 1 ? "call" : "calls"}
+                </p>
+              </article>
 
-        <div className={styles.chartRow}>
-          <section className={styles.chartSection} aria-label="Conversion velocity">
-            <div className={styles.chartHeader}>
-              <div>
-                <h2 className={styles.chartTitle}>Conversion velocity</h2>
-                <p className={styles.chartSub}>7-day rolling optimization metric</p>
-              </div>
-              <div className={styles.chartToggles} role="group" aria-label="Chart scale">
-                {(["D", "W", "M"] as const).map((id) => (
-                  <button
-                    key={id}
-                    type="button"
-                    className={`${styles.chartToggle} ${chartScale === id ? styles.chartToggleOn : ""}`}
-                    onClick={() => setChartScale(id)}
-                  >
-                    {id}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className={styles.chartPlot}>
-              {VELOCITY_DAYS.map((d) => (
-                <div key={d.label} className={styles.chartCol}>
-                  <div className={styles.chartBarWrap}>
-                    {d.tag ? <span className={styles.chartTag}>{d.tag}</span> : null}
-                    <div
-                      className={`${styles.chartBar} ${d.highlight ? styles.chartBarHi : ""}`}
-                      style={{ height: `${d.pct}%` }}
-                    />
+              <article className={`${styles.miniCard} ${styles.orangeCard}`}>
+                <p className={styles.cardLabel}>Calls made</p>
+                <p className={styles.miniValue}>{summary?.total_conversations ?? "—"}</p>
+                <p className={styles.miniFoot}>
+                  {summary?.analyzed_conversations ?? 0} of {summary?.total_conversations ?? 0} reviewed
+                  by AI
+                </p>
+                <Link to="/analytics" className={styles.reportBtn}>
+                  See full report
+                </Link>
+              </article>
+
+              <article className={styles.miniCard}>
+                <p className={styles.cardLabel}>Chance of closing</p>
+                <p className={styles.miniValue}>
+                  {summary ? `${summary.avg_conversion_pct}%` : "—"}
+                </p>
+                <div className={styles.bandRow} aria-label="Calls grouped by closing chance">
+                  {(
+                    [
+                      ["High", summary?.conversion_bands.likely ?? 0, styles.bandHigh],
+                      ["Medium", summary?.conversion_bands.possible ?? 0, styles.bandMid],
+                      ["Low", summary?.conversion_bands.unlikely ?? 0, styles.bandLow],
+                    ] as const
+                  ).map(([label, count, cls]) => (
+                    <div key={label} className={styles.band}>
+                      <div
+                        className={`${styles.bandBar} ${cls}`}
+                        style={{ height: `${12 + Math.min(count, 8) * 5}px` }}
+                      />
+                      <span className={styles.bandCount}>{count}</span>
+                      <span className={styles.bandLabel}>{label}</span>
+                    </div>
+                  ))}
+                </div>
+                <p className={styles.miniFoot}>How many deals look likely to close</p>
+              </article>
+            </section>
+
+            <div className={styles.chartRow}>
+              <section className={styles.chartCard} aria-label="Calls over time">
+                <div className={styles.chartHead}>
+                  <div>
+                    <h2 className={styles.chartTitle}>Calls over time</h2>
+                    <p className={styles.chartSub}>
+                      Each bar is one {range === "7d" ? "day" : "week"}
+                    </p>
                   </div>
-                  <span className={styles.chartDay}>{d.label}</span>
                 </div>
-              ))}
-            </div>
-          </section>
+                <div className={styles.plot}>
+                  {(summary?.weekly_volume ?? []).map((bucket) => {
+                    const isPeak = bucket.count === maxVolume && bucket.count > 0;
+                    return (
+                      <div key={bucket.label} className={styles.plotCol}>
+                        <div className={styles.plotBarWrap}>
+                          {isPeak ? (
+                            <span className={styles.plotTag}>
+                              {bucket.count} {bucket.count === 1 ? "call" : "calls"}
+                            </span>
+                          ) : null}
+                          <div
+                            className={`${styles.plotBar} ${isPeak ? styles.plotBarHi : ""}`}
+                            style={{ height: `${Math.max((bucket.count / maxVolume) * 100, 3)}%` }}
+                            title={`${bucket.label}: ${bucket.count} ${bucket.count === 1 ? "call" : "calls"}`}
+                          />
+                        </div>
+                        <span className={styles.plotDay}>{bucket.label}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
 
-          <section className={styles.insightCard} aria-label="Model throughput">
-            <div className={styles.insightHead}>
-              <div>
-                <h2 className={styles.insightTitle}>Inference throughput</h2>
-                <p className={styles.insightSub}>Tokens per minute · live cluster</p>
+              <section className={styles.chartCard} aria-label="How your team talks">
+                <div className={styles.chartHead}>
+                  <div>
+                    <h2 className={styles.chartTitle}>How your team talks on calls</h2>
+                    <p className={styles.chartSub}>Measured from real call recordings</p>
+                  </div>
+                </div>
+                <p className={styles.verdict}>{verdict?.text ?? "—"}</p>
+                <ul className={styles.coachList}>
+                  <li>
+                    <div className={styles.coachTop}>
+                      <span>Rep talking time</span>
+                      <span className={styles.coachValue}>
+                        {summary ? `${summary.avg_rep_talk_pct}%` : "—"}
+                      </span>
+                    </div>
+                    <div className={styles.coachTrack}>
+                      <div className={styles.coachZone} title="Healthy range: 35–55%" />
+                      <div
+                        className={styles.coachFill}
+                        style={{ width: `${summary?.avg_rep_talk_pct ?? 0}%` }}
+                      />
+                    </div>
+                    <p className={styles.coachNote}>{verdict?.note ?? ""}</p>
+                  </li>
+                  <li>
+                    <div className={styles.coachTop}>
+                      <span>Listening score</span>
+                      <span className={styles.coachValue}>
+                        {coach ? coach.listening_index : "—"}
+                        <span className={styles.coachOf}>/100</span>
+                      </span>
+                    </div>
+                    <div className={styles.coachTrack}>
+                      <div
+                        className={styles.coachFill}
+                        style={{ width: `${coach?.listening_index ?? 0}%` }}
+                      />
+                    </div>
+                  </li>
+                  <li>
+                    <div className={styles.coachTop}>
+                      <span>Questions asked per call</span>
+                      <span className={styles.coachValue}>{coach?.avg_rep_questions ?? "—"}</span>
+                    </div>
+                    <div className={styles.coachTrack}>
+                      <div
+                        className={styles.coachFill}
+                        style={{
+                          width: `${Math.min(((coach?.avg_rep_questions ?? 0) / 8) * 100, 100)}%`,
+                        }}
+                      />
+                    </div>
+                    <p className={styles.coachNote}>Aim for 6 or more — questions uncover what the customer wants.</p>
+                  </li>
+                </ul>
+              </section>
+            </div>
+
+            <section className={styles.tableCard} aria-label="Recent calls">
+              <div className={styles.tableHead}>
+                <h2 className={styles.chartTitle}>Recent calls</h2>
+                <Link to="/analytics" className={styles.tableLink}>
+                  See all calls
+                </Link>
               </div>
-              <span className={styles.insightBadge}>Live</span>
-            </div>
-            <p className={styles.insightHero}>
-              12.4k <span className={styles.insightHeroUnit}>tok/min</span>
-            </p>
-            <p className={styles.insightCaption}>P95 latency 118 ms · within SLO</p>
-            <ul className={styles.insightList}>
-              <li>
-                <div className={styles.insightRowTop}>
-                  <span className={styles.insightLabel}>Streaming ASR</span>
-                  <span className={styles.insightPct}>88%</span>
-                </div>
-                <span className={styles.insightTrack}>
-                  <span className={styles.insightFill} style={{ width: "88%" }} />
-                </span>
-              </li>
-              <li>
-                <div className={styles.insightRowTop}>
-                  <span className={styles.insightLabel}>RAG retrieval</span>
-                  <span className={styles.insightPct}>76%</span>
-                </div>
-                <span className={styles.insightTrack}>
-                  <span className={styles.insightFill} style={{ width: "76%" }} />
-                </span>
-              </li>
-              <li>
-                <div className={styles.insightRowTop}>
-                  <span className={styles.insightLabel}>Suggestion ranker</span>
-                  <span className={styles.insightPct}>92%</span>
-                </div>
-                <span className={styles.insightTrack}>
-                  <span className={styles.insightFill} style={{ width: "92%" }} />
-                </span>
-              </li>
-            </ul>
-          </section>
-        </div>
-
-        <section className={styles.tableSection} aria-label="Recent sessions">
-          <div className={styles.tableHead}>
-            <h2 className={styles.tableTitle}>Recent intelligent sessions</h2>
-            <Link to="/analytics" className={styles.tableLink}>
-              View historical archive
-            </Link>
-          </div>
-          <div className={styles.tableScroll}>
-            <table className={styles.table}>
-              <thead>
-                <tr>
-                  <th scope="col">Session ID</th>
-                  <th scope="col">Lead identity</th>
-                  <th scope="col">Outcome</th>
-                  <th scope="col">Duration</th>
-                </tr>
-              </thead>
-              <tbody>
-                {recentCalls.length > 0
-                  ? recentCalls.map((row) => (
-                      <tr key={row.id}>
-                        <td>
-                          <Link to={`/conversations/${row.id}`} className={styles.sessionId}>
-                            {row.id.slice(0, 8)}
-                          </Link>
-                        </td>
-                        <td>
-                          <div className={styles.leadCell}>
-                            <span className={styles.leadAvatar}>LC</span>
-                            <div>
-                              <p className={styles.leadName}>Live call</p>
-                              <p className={styles.leadSub}>{formatTimestamp(row.started_at)}</p>
-                            </div>
-                          </div>
-                        </td>
-                        <td>
-                          <span
-                            className={
-                              row.status === "ready"
-                                ? styles.badgeOk
-                                : row.status === "analyzing"
-                                  ? styles.badgeNeutral
-                                  : styles.badgeWarn
-                            }
-                          >
-                            {row.status === "ready"
-                              ? "Analyzed"
-                              : row.status === "analyzing"
-                                ? "Analyzing"
-                                : row.status}
-                          </span>
-                        </td>
-                        <td className={styles.duration}>{formatDuration(row.duration_sec)}</td>
-                      </tr>
-                    ))
-                  : SESSIONS_PLACEHOLDER.map((row) => (
-                      <tr key={row.id}>
-                        <td>
-                          <span className={styles.sessionId}>{row.id}</span>
-                        </td>
-                        <td>
-                          <div className={styles.leadCell}>
-                            <span className={styles.leadAvatar}>{row.initials}</span>
-                            <div>
-                              <p className={styles.leadName}>{row.name}</p>
-                              <p className={styles.leadSub}>{row.vertical}</p>
-                            </div>
-                          </div>
-                        </td>
-                        <td>
-                          <span
-                            className={
-                              row.outcome === "converted"
-                                ? styles.badgeOk
-                                : row.outcome === "nurturing"
-                                  ? styles.badgeNeutral
-                                  : styles.badgeWarn
-                            }
-                          >
-                            {row.outcome === "converted"
-                              ? "Converted"
-                              : row.outcome === "nurturing"
-                                ? "Nurturing"
-                                : "Unresponsive"}
-                          </span>
-                        </td>
-                        <td className={styles.duration}>{row.duration}</td>
-                      </tr>
-                    ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
+              <div className={styles.tableScroll}>
+                <table className={styles.table}>
+                  <thead>
+                    <tr>
+                      <th scope="col">Call</th>
+                      <th scope="col">Result</th>
+                      <th scope="col">Customer interest</th>
+                      <th scope="col">Length</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {recentCalls.map((row) => {
+                      const outcome = OUTCOME_LABELS[row.outcome];
+                      return (
+                        <tr key={row.id}>
+                          <td>
+                            <Link to={`/conversations/${row.id}`} className={styles.callId}>
+                              {row.id.slice(0, 8)}
+                            </Link>
+                            <p className={styles.callWhen}>{formatTimestamp(row.started_at)}</p>
+                          </td>
+                          <td>
+                            <span
+                              className={`${styles.pill} ${
+                                outcome.tone === "good"
+                                  ? styles.pillGood
+                                  : outcome.tone === "warn"
+                                    ? styles.pillWarn
+                                    : outcome.tone === "risk"
+                                      ? styles.pillRisk
+                                      : styles.pillNeutral
+                              }`}
+                            >
+                              {outcome.text}
+                            </span>
+                          </td>
+                          <td>
+                            {row.interest_score != null ? (
+                              <div className={styles.interestCell}>
+                                <div className={styles.interestTrack}>
+                                  <div
+                                    className={styles.interestFill}
+                                    style={{ width: `${row.interest_score}%` }}
+                                  />
+                                </div>
+                                <span>{row.interest_score}%</span>
+                              </div>
+                            ) : (
+                              <span className={styles.faint}>—</span>
+                            )}
+                          </td>
+                          <td className={styles.duration}>{formatDuration(row.duration_sec)}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          </>
+        )}
       </div>
     </div>
   );

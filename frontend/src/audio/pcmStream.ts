@@ -147,6 +147,13 @@ export async function startPcmToWebSocket(
   onError?: (err: Error) => void,
   options?: PcmStreamOptions
 ): Promise<PcmStreamHandle> {
+  // Browsers require a secure context for mic + tab capture.
+  // `http://localhost` is treated as secure, but `http://<IP>` is not.
+  if (!window.isSecureContext) {
+    throw new Error(
+      "Live call requires HTTPS (secure context). Open the app over https:// with a real domain (recommended), or use a secure tunnel. HTTP on a public IP is blocked by the browser for microphone/tab audio."
+    );
+  }
   const audioCtx = new AudioContext();
   await audioCtx.resume();
 
