@@ -1,10 +1,9 @@
-"""Optional shared-secret auth for internal APIs and WebSocket."""
-
+"""Optional shared-secret (X-API-Key header) gate for internal REST APIs.
+WebSocket auth lives in app/api/websocket/realtime.py (first-message auth)."""
 
 from fastapi import Depends, HTTPException
 from fastapi.security import APIKeyHeader
 from starlette.status import HTTP_401_UNAUTHORIZED
-from starlette.websockets import WebSocket
 
 from app.core.config import settings
 
@@ -20,14 +19,3 @@ def require_internal_api_key(api_key: str | None = Depends(api_key_header)) -> N
             status_code=HTTP_401_UNAUTHORIZED,
             detail="Invalid or missing API key",
         )
-
-
-def websocket_api_key_ok(websocket: WebSocket) -> bool:
-    """Return True if connection is allowed. Caller should close websocket and return if False."""
-    expected = settings.INTERNAL_API_KEY
-    if not expected:
-        return True
-    header_key = websocket.headers.get("x-api-key")
-    query_key = websocket.query_params.get("api_key")
-    provided = header_key or query_key
-    return bool(provided) and provided == expected

@@ -120,6 +120,14 @@ class Settings(BaseSettings):
     JWT_SECRET: str = "dev-change-me-in-production"
     JWT_EXPIRE_MINUTES: int = 60 * 24 * 7
 
+    # Abuse protection (in-process sliding windows; per-IP for auth, per-user for /ask)
+    RATE_LIMIT_AUTH_PER_MINUTE: int = 10
+    RATE_LIMIT_ASK_PER_MINUTE: int = 30
+    # A rep needs 1 live session; 2 allows a stuck tab + a fresh one.
+    MAX_CONCURRENT_SESSIONS_PER_USER: int = 2
+    # How long the WebSocket waits for the client's auth message before closing.
+    WS_AUTH_TIMEOUT_SECONDS: float = 5.0
+
     # LLM / external call safety
     LLM_REQUEST_TIMEOUT_SECONDS: float = 60.0
     # Max wait between streamed events on a live turn; exceeded = skip (not error) so the
@@ -201,19 +209,25 @@ settings = Settings()
 
 
 def validate_production_settings() -> None:
-    """Raise if required secrets are missing in production."""
+    """Refuse to start production with missing secrets or unsafe auth config."""
     if settings.ENVIRONMENT != "production":
         return
-    missing = []
+    problems = []
     if settings.LLM_PROVIDER.lower().strip() == "openai":
         if not settings.OPENAI_API_KEY:
-            missing.append("OPENAI_API_KEY")
+            problems.append("OPENAI_API_KEY is missing")
     else:
         if not settings.GEMINI_API_KEY:
-            missing.append("GEMINI_API_KEY")
+            problems.append("GEMINI_API_KEY is missing")
     if not settings.DEEPGRAM_API_KEY:
-        missing.append("DEEPGRAM_API_KEY")
-    if missing:
-        raise RuntimeError(
-            f"Production requires environment variables: {', '.join(missing)}"
-        )
+        problems.append("DEEPGRAM_API_KEY is missing")
+    # A guessable or short JWT secret makes every session token forgeable.
+    if settings.JWT_SECRET == "dev-change-me-in-production":
+        problems.append("JWT_SECRET is still the dev default")
+    elif len(settings.JWT_SECRET.encode()) < 32:
+        problems.append("JWT_SECRET must be at least 32 bytes for HS256")
+    # Empty CORS_ORIGINS = same-origin only (safe); a wildcard is never safe with credentials.
+    if "*" in settings.CORS_ORIGINS:
+        problems.append("CORS_ORIGINS must list explicit origins, not '*'")
+    if problems:
+        raise RuntimeError("Unsafe production configuration: " + "; ".join(problems))

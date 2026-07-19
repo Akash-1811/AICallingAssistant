@@ -88,15 +88,12 @@ function appendMessage(messages: WsMessage[], payload: WsMessage): WsMessage[] {
 
 // ─── WS URL builder ──────────────────────────────────────────────────────────
 
-function buildWsUrl(apiKey: string): string {
+// Credentials are NEVER put in the URL (URLs land in server access logs).
+// Auth is sent as the first WebSocket message instead — see connect().
+function buildWsUrl(): string {
   const path = import.meta.env.VITE_WS_PATH || "/ws/realtime";
   const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
-  const params = new URLSearchParams();
-  const token = getStoredToken();
-  if (token) params.set("token", token);
-  else if (apiKey.trim()) params.set("api_key", apiKey.trim());
-  const q = params.toString() ? `?${params.toString()}` : "";
-  return `${proto}//${window.location.host}${path}${q}`;
+  return `${proto}//${window.location.host}${path}`;
 }
 
 // ─── Hook ─────────────────────────────────────────────────────────────────────
@@ -158,9 +155,20 @@ export function useAssistantWs(): AssistantWsApi {
       teardown();
       dispatch({ type: "CONNECTING" });
 
-      const ws = new WebSocket(buildWsUrl(apiKey));
+      const ws = new WebSocket(buildWsUrl());
       ws.binaryType = "arraybuffer";
       wsRef.current = ws;
+
+      // Auth must be the FIRST message on the socket — the server waits for it
+      // before starting the session (and ignores everything else until then).
+      ws.onopen = () => {
+        const token = getStoredToken();
+        ws.send(
+          JSON.stringify(
+            token ? { type: "auth", token } : { type: "auth", api_key: apiKey.trim() }
+          )
+        );
+      };
 
       ws.onmessage = (ev) => {
         try {

@@ -7,15 +7,15 @@ from datetime import UTC, datetime, timedelta
 
 import bcrypt
 import jwt
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy import DateTime, String, select
 from sqlalchemy.orm import Mapped, mapped_column
 from starlette.status import HTTP_401_UNAUTHORIZED
-from starlette.websockets import WebSocket
 
 from app.core.config import settings
+from app.core.ratelimit import auth_limiter, client_ip, enforce_rate_limit
 from app.storage.call_store import Base, get_db
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -100,15 +100,9 @@ async def get_current_user(
     return user
 
 
-def websocket_jwt_ok(websocket: WebSocket) -> bool:
-    token = websocket.query_params.get("token")
-    if not token:
-        return False
-    return decode_token(token) is not None
-
-
 @router.post("/signup", response_model=AuthResponse)
-async def signup(body: SignupBody) -> AuthResponse:
+async def signup(body: SignupBody, request: Request) -> AuthResponse:
+    enforce_rate_limit(auth_limiter, client_ip(request), "Too many attempts — try again in a minute")
     email = body.email.strip().lower()
     async with get_db() as session:
         existing = await session.scalar(select(User).where(User.email == email))
@@ -128,7 +122,8 @@ async def signup(body: SignupBody) -> AuthResponse:
 
 
 @router.post("/login", response_model=AuthResponse)
-async def login(body: LoginBody) -> AuthResponse:
+async def login(body: LoginBody, request: Request) -> AuthResponse:
+    enforce_rate_limit(auth_limiter, client_ip(request), "Too many attempts — try again in a minute")
     email = body.email.strip().lower()
     async with get_db() as session:
         user = await session.scalar(select(User).where(User.email == email))

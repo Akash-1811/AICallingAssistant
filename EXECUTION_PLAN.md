@@ -98,12 +98,12 @@ turn end-to-end by opening files in `live/` → `rag/` in order, without jumping
 
 Do this before any real user touches the system.
 
-- [ ] `validate_production_settings()` also enforces `JWT_SECRET`: present, not the
+- [x] `validate_production_settings()` also enforces `JWT_SECRET`: present, not the
       dev default, ≥32 bytes. Generate a strong secret for every environment.
-- [ ] Move WebSocket auth from `?token=` in the URL to the first WS message
+- [x] Move WebSocket auth from `?token=` in the URL to the first WS message
       (tokens must never appear in access logs).
-- [ ] Rate limiting on `/auth/*` and `/ask`; cap concurrent live sessions per user.
-- [ ] Backend must not start in production mode with CORS wide open / missing origins.
+- [x] Rate limiting on `/auth/*` and `/ask`; cap concurrent live sessions per user.
+- [x] Backend must not start in production mode with CORS wide open / missing origins.
 
 **Done when:** a request log contains zero tokens; production boot fails loudly on a
 weak secret; a script hammering `/auth/login` gets 429s.
