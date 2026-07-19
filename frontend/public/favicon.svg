@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="AI Sales Assistant">
+  <!-- Match the sidebar brand mark (soft orange tile + cube outline). -->
+  <rect x="6" y="6" width="52" height="52" rx="12" fill="#FDF2EB" />
+  <g transform="translate(5.6 5.6) scale(2.2)" fill="none" stroke="#EB5700" stroke-width="1.35" stroke-linejoin="round">
+    <path d="M12 2L3 7v10l9 5 9-5V7l-9-5z" />
+    <path d="M12 22V12" stroke-linecap="round" />
+  </g>
+</svg>
+
