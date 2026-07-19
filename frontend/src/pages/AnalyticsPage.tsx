@@ -7,6 +7,7 @@ import {
   type AnalyticsCallRow,
   type AnalyticsSummary,
 } from "../api/conversations";
+import { downloadTranscriptTxt } from "../utils/downloadTranscript";
 import { scoreTone } from "./callReview/metrics";
 import { OUTCOME_LABELS, RANGE_OPTIONS, TALK_LABELS } from "./analytics/constants";
 import { DrilldownModal } from "./analytics/DrilldownModal";
@@ -305,7 +306,23 @@ export function AnalyticsPage() {
                     <tr key={call.id}>
                       <td>{formatTimestamp(call.started_at)}</td>
                       <td>{call.rep_label?.trim() || "—"}</td>
-                      <td>{formatDuration(call.duration_sec)}</td>
+                      <td>
+                        <div className={styles.lengthCell}>
+                          <span>{formatDuration(call.duration_sec)}</span>
+                          <button
+                            type="button"
+                            className={styles.transcriptBtn}
+                            onClick={() =>
+                              void downloadTranscriptTxt(call.id).catch((e) =>
+                                setExportNote(e instanceof Error ? e.message : "Could not download transcript")
+                              )
+                            }
+                            title="Download transcript"
+                          >
+                            Transcript
+                          </button>
+                        </div>
+                      </td>
                       <td>
                         <span className={styles.outcomePill} data-tone={call.outcome}>
                           {OUTCOME_LABELS[call.outcome]}

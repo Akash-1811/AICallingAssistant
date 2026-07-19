@@ -802,6 +802,37 @@
 .reviewBtn:active { transform: translateY(0); }
 .reviewBtn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
+.lengthCell {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  white-space: nowrap;
+}
+
+.transcriptBtn {
+  appearance: none;
+  border: 1px solid var(--sep);
+  background: var(--surface-2);
+  color: var(--text-sub);
+  border-radius: 999px;
+  padding: 0.38rem 0.65rem;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: background var(--t) var(--ease), border-color var(--t) var(--ease), transform var(--t) var(--ease);
+}
+
+.transcriptBtn:hover {
+  background: var(--surface-3);
+  border-color: var(--border-strong);
+  color: var(--text);
+  transform: translateY(-1px);
+}
+
+.transcriptBtn:active { transform: translateY(0); }
+.transcriptBtn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
 /* ─── Right rail ─────────────────────────────────────────────────────────────── */
 .rangeCard {
   background: var(--surface);

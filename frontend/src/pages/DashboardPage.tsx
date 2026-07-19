@@ -16,6 +16,7 @@ import {
   type AnalyticsCallRow,
   type AnalyticsSummary,
 } from "../api/conversations";
+import { downloadTranscriptTxt } from "../utils/downloadTranscript";
 import appStyles from "../App.module.css";
 import styles from "./DashboardPage.module.css";
 
@@ -583,6 +584,7 @@ export function DashboardPage() {
                 <div className={styles.plot}>
                   {(summary?.weekly_volume ?? []).map((bucket) => {
                     const isPeak = bucket.count === maxVolume && bucket.count > 0;
+                    const isOn = bucket.count > 0;
                     return (
                       <div key={bucket.label} className={styles.plotCol}>
                         <div className={styles.plotBarWrap}>
@@ -593,7 +595,7 @@ export function DashboardPage() {
                           ) : null}
                           <button
                             type="button"
-                            className={`${styles.plotBar} ${isPeak ? styles.plotBarHi : ""}`}
+                            className={`${styles.plotBar} ${isOn ? styles.plotBarOn : ""} ${isPeak ? styles.plotBarHi : ""}`}
                             style={{ height: `${Math.max((bucket.count / maxVolume) * 100, 2)}%` }}
                             title={`${bucket.label}: ${bucket.count} ${bucket.count === 1 ? "call" : "calls"}. Click to view.`}
                             disabled={bucket.count === 0}
@@ -795,7 +797,23 @@ export function DashboardPage() {
                               </span>
                             )}
                           </td>
-                          <td className={styles.duration}>{formatDuration(row.duration_sec)}</td>
+                          <td className={styles.duration}>
+                            <div className={styles.durationCell}>
+                              <span>{formatDuration(row.duration_sec)}</span>
+                              <button
+                                type="button"
+                                className={styles.transcriptBtn}
+                                onClick={() =>
+                                  void downloadTranscriptTxt(row.id).catch((e) =>
+                                    setError(e instanceof Error ? e.message : "Could not download transcript")
+                                  )
+                                }
+                                title="Download transcript"
+                              >
+                                Transcript
+                              </button>
+                            </div>
+                          </td>
                         </tr>
                       );
                     })}
