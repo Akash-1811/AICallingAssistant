@@ -104,10 +104,13 @@ export function AnalyticsPage() {
                       onClick={() => setDrilldown({ type: "volume", period: week.label })}
                       aria-label={`${week.label}, ${week.count} calls`}
                     >
-                      <div
-                        className={styles.barFill}
-                        style={{ height: `${Math.max(week.pct, week.count ? 8 : 2)}%` }}
-                      />
+                      <div className={styles.barWrap} aria-hidden="true">
+                        {week.count ? <span className={styles.barValue}>{week.count}</span> : null}
+                        <div
+                          className={styles.barFill}
+                          style={{ height: `${Math.max(week.pct, week.count ? 8 : 2)}%` }}
+                        />
+                      </div>
                       <span className={styles.barTick}>{week.label}</span>
                     </button>
                   ))}
@@ -319,7 +322,9 @@ export function AnalyticsPage() {
                         )}
                       </td>
                       <td>
-                        <Link to={`/conversations/${call.id}`}>Review</Link>
+                        <Link className={styles.reviewBtn} to={`/conversations/${call.id}`}>
+                          Review
+                        </Link>
                       </td>
                     </tr>
                   ))}
