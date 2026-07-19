@@ -87,6 +87,36 @@ def read_prospect_signals(analysis: dict | None) -> dict[str, int]:
     }
 
 
+def _extract_examples(items: Any, *, label_key: str, quote_key: str, limit: int = 2) -> list[str]:
+    if not isinstance(items, list) or not items:
+        return []
+    seen: set[str] = set()
+    out: list[str] = []
+    for raw in items:
+        text = ""
+        if isinstance(raw, str):
+            text = raw.strip()
+        elif isinstance(raw, dict):
+            label = str(raw.get(label_key) or raw.get("label") or raw.get("title") or "").strip()
+            quote = str(raw.get(quote_key) or raw.get("evidence") or raw.get("quote") or "").strip()
+            if label and quote:
+                text = f"{label} — “{quote}”"
+            elif label:
+                text = label
+            elif quote:
+                text = f"“{quote}”"
+        text = text.strip()
+        if not text:
+            continue
+        if text in seen:
+            continue
+        seen.add(text)
+        out.append(text)
+        if len(out) >= limit:
+            break
+    return out
+
+
 def conversion_band(conversion: int | None) -> str | None:
     """Bucket a conversion likelihood: likely (>=65), possible (>=45), unlikely."""
     if conversion is None:
@@ -135,6 +165,9 @@ def build_call_analytics_row(
     analysis = analysis_row.analysis if analysis_row else None
     interest, conversion = read_interest_and_conversion(analysis)
     signals = read_prospect_signals(analysis)
+    intent = get_client_intent(analysis) if analysis_row else {}
+    interest_examples = _extract_examples(intent.get("buying_signals"), label_key="signal", quote_key="evidence_quote")
+    concern_examples = _extract_examples(intent.get("objections"), label_key="objection", quote_key="evidence_quote")
     metrics = analysis_row.metrics if analysis_row else {}
     ratio = metrics.get("talk_listen_ratio") or {}
     rep_talk = ratio.get("rep_pct")
@@ -153,6 +186,8 @@ def build_call_analytics_row(
         "status": conv.status,
         "rep_label": conv.rep_label,
         "has_audio": has_audio,
+        "interest_examples": interest_examples,
+        "concern_examples": concern_examples,
         "interest_score": interest,
         "conversion_pct": conversion,
         "buying_signals": signals["buying_signals"] if analysis_row else 0,

@@ -610,7 +610,7 @@ export function DashboardPage() {
             </section>
 
             {/* ── Row 3: attention list + coaching ──────────────────── */}
-            <section className={`${styles.card} ${styles.spanHalf}`} aria-label="Needs your attention">
+            <section className={`${styles.card} ${styles.spanHalf} ${styles.cardTight}`} aria-label="Needs your attention">
               <div className={styles.chartHead}>
                 <div>
                   <h2 className={styles.chartTitle}>Needs your attention</h2>
@@ -710,7 +710,7 @@ export function DashboardPage() {
             </section>
 
             {/* ── Row 4: recent calls ───────────────────────────────── */}
-            <section className={`${styles.card} ${styles.spanFull}`} aria-label="Recent calls">
+            <section className={`${styles.card} ${styles.spanFull} ${styles.cardTight} ${styles.recentCallsTight}`} aria-label="Recent calls">
               <div className={styles.chartHead}>
                 <h2 className={styles.chartTitle}>Recent calls</h2>
                 <Link to="/analytics" className={styles.tableLink}>

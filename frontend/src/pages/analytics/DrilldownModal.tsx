@@ -40,6 +40,7 @@ export function DrilldownModal({ drilldown, summary, onClose }: Props) {
 
   const showCoaching = drilldown.type === "coaching";
   const showSignals = drilldown.type === "signals" || drilldown.type === "outcome";
+  const showSignalDetails = drilldown.type === "signals";
   const showConversion =
     drilldown.type === "win_band" || drilldown.type === "outcome" || drilldown.type === "volume";
 
@@ -84,6 +85,7 @@ export function DrilldownModal({ drilldown, summary, onClose }: Props) {
                   <th scope="col">Length</th>
                   {showConversion ? <th scope="col">Close chance</th> : null}
                   {showSignals ? <th scope="col">Interest</th> : null}
+                  {showSignalDetails ? <th scope="col">Details</th> : null}
                   {showCoaching ? <th scope="col">You talked</th> : null}
                   {showCoaching ? <th scope="col">Questions</th> : null}
                   {showCoaching && drilldown.focus === "wpm" ? <th scope="col">Speed</th> : null}
@@ -112,6 +114,33 @@ export function DrilldownModal({ drilldown, summary, onClose }: Props) {
                     {showSignals ? (
                       <td>
                         {call.outcome === "pending" ? "—" : `+${call.buying_signals} / -${call.objections}`}
+                      </td>
+                    ) : null}
+                    {showSignalDetails ? (
+                      <td>
+                        {drilldown.signal === "buying" ? (
+                          call.interest_examples.length ? (
+                            <ul className={styles.drillExamples}>
+                              {call.interest_examples.map((item) => (
+                                <li key={item} className={styles.drillExample}>
+                                  {item}
+                                </li>
+                              ))}
+                            </ul>
+                          ) : (
+                            <span className={styles.drillExampleEmpty}>—</span>
+                          )
+                        ) : call.concern_examples.length ? (
+                          <ul className={styles.drillExamples}>
+                            {call.concern_examples.map((item) => (
+                              <li key={item} className={styles.drillExample}>
+                                {item}
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <span className={styles.drillExampleEmpty}>—</span>
+                        )}
                       </td>
                     ) : null}
                     {showCoaching ? <td>{call.rep_talk_pct != null ? `${call.rep_talk_pct}%` : "—"}</td> : null}

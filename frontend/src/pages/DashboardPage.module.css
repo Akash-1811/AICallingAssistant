@@ -97,6 +97,10 @@
   padding: 22px;
 }
 
+.cardTight {
+  padding: 18px;
+}
+
 .cardLabel {
   font-size: 11.5px;
   font-weight: 700;
@@ -522,7 +526,7 @@
 /* ── Attention list ─────────────────────────────────────────────── */
 .actionList {
   list-style: none;
-  margin: 14px 0 0;
+  margin: 10px 0 0;
   padding: 0;
   display: flex;
   flex-direction: column;
@@ -533,7 +537,7 @@
   justify-content: space-between;
   align-items: center;
   gap: 12px;
-  padding: 13px 10px;
+  padding: 10px 10px;
   border-radius: var(--r);
   text-decoration: none;
   border-bottom: 1px solid var(--sep);
@@ -658,12 +662,12 @@
   text-transform: uppercase;
   color: var(--text-sub);
   font-weight: 700;
-  padding: 12px 14px;
+  padding: 10px 12px;
   border-bottom: 1px solid var(--sep);
 }
 
 .table td {
-  padding: 14px;
+  padding: 11px 12px;
   border-bottom: 1px solid var(--sep);
   color: var(--text);
   font-variant-numeric: tabular-nums;
@@ -730,6 +734,10 @@
 }
 
 .callWhen { color: var(--text-sub); font-size: 12px; margin: 3px 0 0; }
+
+.recentCallsTight .callWhen { margin-top: 2px; }
+.recentCallsTight .saidCell { font-size: 12.5px; }
+.recentCallsTight .interestCell { min-width: 120px; }
 
 .interestCell { display: flex; align-items: center; gap: 10px; min-width: 130px; }
 
