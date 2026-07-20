@@ -40,6 +40,15 @@ export function CallReviewPage() {
     );
   }
 
+  const status = analysis?.status ?? conversation?.status ?? "";
+  const isAnalyzing =
+    !loading &&
+    !vm.hasReport &&
+    (status === "analyzing" || status === "running" || conversation?.status === "analyzing");
+  const isFailed = !loading && !vm.hasReport && status === "failed";
+  const isWaiting = !loading && !vm.hasReport && !isAnalyzing && !isFailed && !error;
+  const isDemo = analysis?.model === "seed-demo-api";
+
   return (
     <div className={appStyles.content}>
       <div className={`${appStyles.mainCol} ${styles.page}`}>
@@ -52,6 +61,16 @@ export function CallReviewPage() {
               <span className={`${styles.status} ${styles[`status_${analysis?.status ?? conversation?.status}`] ?? ""}`}>
                 {statusLabel(analysis?.status ?? conversation?.status ?? "")}
               </span>
+              {(analysis?.version ?? 0) > 1 ? (
+                <span className={styles.metaChip} title="This call has been re-analyzed">
+                  Analysis v{analysis?.version}
+                </span>
+              ) : null}
+              {isDemo ? (
+                <span className={styles.demoChip} title="Sample call created for demonstration — not a real customer">
+                  Demo call
+                </span>
+              ) : null}
             </p>
           </div>
           <div className={styles.headerActions}>
@@ -66,6 +85,48 @@ export function CallReviewPage() {
 
         {loading ? <p className={styles.loading}>Loading call…</p> : null}
         {error ? <p className={styles.error}>{error}</p> : null}
+
+        {isAnalyzing ? (
+          <section className={styles.statePanel} aria-live="polite">
+            <span className={styles.stateSpinner} aria-hidden="true" />
+            <h2 className={styles.stateTitle}>Reviewing this call…</h2>
+            <p className={styles.stateBody}>
+              The AI is reading the transcript. This usually takes under a minute — the page
+              updates by itself when it's done.
+            </p>
+          </section>
+        ) : null}
+
+        {isFailed ? (
+          <section className={`${styles.statePanel} ${styles.statePanelFailed}`}>
+            <h2 className={styles.stateTitle}>The review didn't finish</h2>
+            <p className={styles.stateBody}>
+              {analysis?.error
+                ? `Reason: ${analysis.error}`
+                : "Something went wrong while reviewing this call."}{" "}
+              The transcript is safe — trying again usually works.
+            </p>
+            <button
+              type="button"
+              className={styles.primaryBtn}
+              onClick={() => void handleReanalyze()}
+              disabled={reanalyzing}
+            >
+              {reanalyzing ? "Trying again…" : "Try again"}
+            </button>
+          </section>
+        ) : null}
+
+        {isWaiting ? (
+          <section className={styles.statePanel}>
+            <h2 className={styles.stateTitle}>No review yet</h2>
+            <p className={styles.stateBody}>
+              {conversation?.status === "live"
+                ? "This call is still in progress — the review starts automatically when it ends."
+                : "This call hasn't been reviewed. Use Re-analyze to run the review now."}
+            </p>
+          </section>
+        ) : null}
 
         {!loading && vm.hasReport ? (
           <>

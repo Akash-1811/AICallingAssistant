@@ -1980,3 +1980,57 @@
   color: var(--text-faint);
   font-style: italic;
 }
+
+/* ── Analysis lifecycle states (analyzing / failed / waiting) ────── */
+.statePanel {
+  background: var(--surface);
+  border: 1px solid var(--sep);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-sm);
+  padding: 48px 24px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.statePanelFailed { border-color: var(--red-text); border-width: 1px; }
+
+.stateTitle { font-size: 20px; font-weight: 700; color: var(--text); margin: 0; }
+
+.stateBody { color: var(--text-sub); font-size: 14px; margin: 0 auto; max-width: 52ch; }
+
+.stateSpinner {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 3px solid var(--surface-3);
+  border-top-color: var(--accent);
+  animation: stateSpin 0.9s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stateSpinner { animation: none; }
+}
+
+@keyframes stateSpin { to { transform: rotate(360deg); } }
+
+.statePanel .primaryBtn { margin-top: 8px; }
+
+/* ── Header meta chips ───────────────────────────────────────────── */
+.metaChip,
+.demoChip {
+  display: inline-block;
+  margin-left: 10px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 3px 9px;
+  border-radius: 999px;
+  vertical-align: 1px;
+}
+
+.metaChip { background: var(--surface-3); color: var(--text-sub); }
+.demoChip { background: var(--amber-bg); color: var(--amber-text); }

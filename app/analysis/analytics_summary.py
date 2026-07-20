@@ -10,6 +10,12 @@ from typing import Any
 from app.core.config import settings
 from app.storage.call_store import Conversation, ConversationAnalysis
 
+# The per-call rows returned to the dashboard are capped: aggregates always use
+# every call in the range, but shipping thousands of detailed rows (with example
+# quotes) in one response is the first thing that would fall over at scale.
+# The real fix at high volume is SQL-side aggregation + pagination (roadmap §4).
+MAX_CALL_ROWS = 100
+
 
 def range_start_time(range_key: str) -> datetime:
     now = datetime.now(UTC)
@@ -296,6 +302,7 @@ def build_analytics_summary(
         "weekly_volume": weekly_volume,
         "calls": [
             {key: value for key, value in call.items() if key not in {"suggestion_count", "suggestions_from_cache"}}
-            for call in calls
+            for call in calls[:MAX_CALL_ROWS]
         ],
+        "calls_truncated": len(calls) > MAX_CALL_ROWS,
     }

@@ -75,6 +75,7 @@ export type AnalyticsSummary = {
     listening_index: number;
   };
   weekly_volume: { label: string; count: number; call_ids: string[] }[];
+  calls_truncated?: boolean;
   calls: AnalyticsCallRow[];
 };
 

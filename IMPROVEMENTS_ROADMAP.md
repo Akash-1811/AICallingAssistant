@@ -148,6 +148,9 @@ Move capture **off the rep's browser entirely** — how Gong / Chorus / Cresta d
 - [ ] WS auth via first message instead of query param.
 - [ ] Add a `workspace_id` payload filter to Qdrant search + cache keys (the
       `conversations.workspace_id` column already exists — the concept is half-built).
+- [ ] Conversation/analytics REST endpoints must also filter by workspace —
+      verified 2026-07-20: any logged-in user can read any user's calls,
+      transcripts, analyses, and audio.
 - [ ] Rate limiting (e.g. `slowapi`) on auth + ask endpoints; cap concurrent WS
       sessions per user.
 - [ ] Rotate all keys; move production secrets to a secrets manager.
