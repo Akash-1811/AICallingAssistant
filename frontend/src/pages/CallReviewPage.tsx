@@ -119,11 +119,17 @@ export function CallReviewPage() {
 
         {isWaiting ? (
           <section className={styles.statePanel}>
-            <h2 className={styles.stateTitle}>No review yet</h2>
+            <h2 className={styles.stateTitle}>
+              {segments.length === 0 && conversation?.status !== "live"
+                ? "Nothing to review"
+                : "No review yet"}
+            </h2>
             <p className={styles.stateBody}>
               {conversation?.status === "live"
                 ? "This call is still in progress — the review starts automatically when it ends."
-                : "This call hasn't been reviewed. Use Re-analyze to run the review now."}
+                : segments.length === 0
+                  ? "This call ended before any conversation was captured, so there is nothing to analyze."
+                  : "This call hasn't been reviewed. Use Re-analyze to run the review now."}
             </p>
           </section>
         ) : null}

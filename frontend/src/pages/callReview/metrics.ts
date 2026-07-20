@@ -48,8 +48,7 @@ export type CallReviewView = ReturnType<typeof buildCallReviewView>;
 export function buildCallReviewView(
   report: Record<string, unknown>,
   metrics: Record<string, unknown>,
-  conversation: ConversationSummary | null,
-  analysisStatus?: string
+  conversation: ConversationSummary | null
 ) {
   const clientIntent = asRecord(report.client_intent);
   const repComm = asRecord(report.rep_communication);
@@ -136,7 +135,11 @@ export function buildCallReviewView(
     coaching: asArray(repComm.coaching_recommendations),
     strengths: asArray<string>(repComm.strengths),
     dealHealth: Math.round((interestScore + conversionPct) / 2),
-    hasReport: Boolean(executiveSummary || analysisStatus === "ready"),
+    // A report exists only when there is actual content. A conversation can be
+    // "ready" with NO analysis (e.g. a seconds-long call with no transcript) —
+    // that must show the empty state, not a shell of zeros. Every real report
+    // has an executive summary (required by the backend schema).
+    hasReport: Boolean(executiveSummary),
     executiveSummary,
     shortSummary: firstSentence.length > 220 ? `${firstSentence.slice(0, 217)}…` : firstSentence,
   };

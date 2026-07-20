@@ -91,10 +91,9 @@ export function useCallReview(conversationId: string | undefined) {
       buildCallReviewView(
         asRecord(analysis?.analysis),
         asRecord(analysis?.metrics),
-        conversation,
-        analysis?.status
+        conversation
       ),
-    [analysis?.analysis, analysis?.metrics, analysis?.status, conversation]
+    [analysis?.analysis, analysis?.metrics, conversation]
   );
 
   return {
