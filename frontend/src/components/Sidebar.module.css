@@ -222,3 +222,140 @@ a.navItem {
     opacity: 0.45;
   }
 }
+
+/* ── Mobile drawer ─────────────────────────────────────────────────────────
+   Below 768px the inline sidebar hides and a hamburger button opens this
+   same panel as an overlay, portaled to <body>. Above 768px none of this
+   fires, so the desktop layout is byte-for-byte what it was before. */
+
+.mobileTopbar {
+  display: none;
+}
+
+.drawerCloseBtn {
+  display: none;
+}
+
+.backdrop {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .sidebarInline {
+    display: none;
+  }
+
+  /* The topbar takes the sidebar's place in the layout flow on mobile, so it
+     sits above the page content instead of floating over it. */
+  .mobileTopbar {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    padding: 0.65rem 0.9rem;
+    background: var(--surface);
+    border-bottom: 1px solid var(--sep);
+    flex-shrink: 0;
+  }
+
+  .mobileMenuBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 38px;
+    height: 38px;
+    border: 1px solid var(--sep);
+    border-radius: var(--r-md);
+    background: var(--surface-2);
+    color: var(--text);
+    cursor: pointer;
+  }
+
+  .mobileMenuBtn:hover {
+    background: var(--surface-3);
+  }
+
+  .mobileTopbarBrand {
+    font-size: 0.9rem;
+    font-weight: 800;
+    color: var(--accent);
+    letter-spacing: -0.02em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+  }
+
+  .sidebarDrawer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100dvh;
+    z-index: 1000;
+    box-shadow: 8px 0 32px rgba(0, 0, 0, 0.35);
+    animation: sidebarSlideIn 0.22s ease-out;
+  }
+
+  .drawerCloseBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    margin-left: auto;
+    border: none;
+    border-radius: var(--r-sm);
+    background: none;
+    color: var(--text-sub);
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .drawerCloseBtn:hover {
+    background: var(--surface-2);
+    color: var(--text);
+  }
+
+  .backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(10, 10, 14, 0.55);
+    z-index: 999;
+    animation: backdropFadeIn 0.2s ease-out;
+  }
+}
+
+/* Failsafe: if the viewport crosses back above 768px while the drawer is
+   still mounted (e.g. rotating a tablet), never let it linger over the
+   desktop layout. */
+@media (min-width: 769px) {
+  .sidebarDrawer {
+    display: none !important;
+  }
+}
+
+@keyframes sidebarSlideIn {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes backdropFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebarDrawer,
+  .backdrop {
+    animation: none;
+  }
+}

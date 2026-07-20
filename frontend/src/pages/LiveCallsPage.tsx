@@ -230,6 +230,43 @@ export function LiveCallsPage() {
             </div>
           ) : null}
 
+          {/* The Start/End call control normally lives in the right rail below,
+              but that rail hides below 1060px to make room for the transcript —
+              taking the only way to start a call with it. This copy fills that
+              gap; it's hidden again once the rail has room to show its own. */}
+          <div className={styles.mobileCallControl}>
+            {isLive ? (
+              <div className={styles.liveCallPill}>
+                <div className={styles.livePillLeft}>
+                  <span className={styles.livePillDot} aria-hidden="true" />
+                  <span className={styles.livePillText} aria-live="polite">
+                    Live call <span className={styles.livePillSep}>|</span> {elapsed}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  className={styles.liveEndCallBtn}
+                  onClick={disconnect}
+                  aria-label="End call"
+                >
+                  <HangupPhoneIcon />
+                </button>
+              </div>
+            ) : (
+              <button
+                className={styles.startBtn}
+                type="button"
+                onClick={handleStart}
+                disabled={isBusy}
+                aria-busy={isBusy}
+              >
+                <MicIcon />
+                {isBusy ? "Connecting…" : "Start Session"}
+              </button>
+            )}
+            {error && <p className={styles.errorMsg}>{error}</p>}
+          </div>
+
           <div className={styles.transcriptBlock}>
             <TranscriptFeed messages={messages} />
           </div>

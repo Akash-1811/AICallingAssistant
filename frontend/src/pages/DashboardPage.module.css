@@ -922,3 +922,63 @@
   border-radius: 999px;
   text-decoration: none;
 }
+
+/* ── Small phones ───────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .card,
+  .emptyCard,
+  .orangeCard {
+    padding: 16px;
+  }
+
+  .heroTop {
+    gap: 18px;
+  }
+
+  /* Two stat columns side-by-side get too cramped on a phone, and the "high
+     / medium / low" breakdown that belongs to the second column ends up
+     looking offset from the left edge. Stack them full-width instead. */
+  .heroSideStats {
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .heroStat {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .heroValue {
+    font-size: 34px;
+  }
+
+  .orangeValue {
+    font-size: 32px;
+  }
+
+  .orangeStats {
+    flex-wrap: wrap;
+    row-gap: 12px;
+  }
+
+  .modalRowTop {
+    grid-template-columns: 1fr;
+    row-gap: 6px;
+  }
+
+  .modalChevron {
+    display: none;
+  }
+
+  .modalHead {
+    padding: 14px 14px 10px;
+  }
+
+  .modalList {
+    padding: 8px 8px 12px;
+  }
+
+  .emptyCard {
+    padding: 36px 18px;
+  }
+}

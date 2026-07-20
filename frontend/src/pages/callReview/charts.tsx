@@ -165,41 +165,41 @@ export function MiniTrendChart({
   color = "accent",
   label,
   spikeIndices = [],
-  variant = "default",
 }: {
   values: number[];
   color?: "accent" | "teal" | "amber";
   label?: string;
   spikeIndices?: number[];
-  variant?: "default" | "kpi";
 }) {
+  // Every series here is 5 measured call phases (Start/Early/Mid/Late/End), not
+  // a continuous signal — the axis labels and one dot per phase are what make
+  // that legible, instead of reading as an arbitrary smoothed squiggle.
   const w = 280;
-  const h = 112;
-  const padX = variant === "kpi" ? 4 : 8;
-  const padY = variant === "kpi" ? 6 : 12;
+  const plotH = 96;
+  const padX = 10;
+  const padY = 10;
+  const labelY = plotH + 18;
   const colorVar = color === "teal" ? "var(--teal)" : color === "amber" ? "var(--amber)" : "var(--accent)";
   const gradId = `trend-${color}-${values.join("-").slice(0, 12)}`;
-  const fillTop = variant === "kpi" ? 0.22 : 0.35;
-  const fillBottom = variant === "kpi" ? 0.02 : 0.03;
-  const strokeWidth = variant === "kpi" ? 2 : 2.25;
 
-  const pts = values.map((v, i) => {
-    const x = padX + (i / Math.max(values.length - 1, 1)) * (w - padX * 2);
-    const y = padY + (1 - v / 100) * (h - padY * 2);
-    return { x, y, v };
+  const phases = buildPhaseSeries(values);
+  const pts = phases.map((phase, i) => {
+    const x = padX + (i / Math.max(phases.length - 1, 1)) * (w - padX * 2);
+    const y = padY + (1 - phase.score / 100) * (plotH - padY * 2);
+    return { x, y, v: phase.score };
   });
   if (pts.length < 2) return null;
 
-  const linePath = buildSmoothLinePath(pts);
-  const areaPath = `${linePath} L ${pts[pts.length - 1].x} ${h - padY} L ${pts[0].x} ${h - padY} Z`;
+  const linePath = buildSmoothLinePath(pts, 0.3);
+  const areaPath = `${linePath} L ${pts[pts.length - 1].x} ${plotH} L ${pts[0].x} ${plotH} Z`;
 
   return (
     <div className={styles.trendChartWrap}>
-      <svg viewBox={`0 0 ${w} ${h}`} className={styles.trendChart} preserveAspectRatio="none" aria-hidden>
+      <svg viewBox={`0 0 ${w} ${plotH + 24}`} className={styles.trendChart} aria-hidden>
         <defs>
           <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={colorVar} stopOpacity={fillTop} />
-            <stop offset="100%" stopColor={colorVar} stopOpacity={fillBottom} />
+            <stop offset="0%" stopColor={colorVar} stopOpacity="0.3" />
+            <stop offset="100%" stopColor={colorVar} stopOpacity="0.02" />
           </linearGradient>
         </defs>
         {[25, 50, 75].map((g) => (
@@ -207,55 +207,49 @@ export function MiniTrendChart({
             key={g}
             x1={padX}
             x2={w - padX}
-            y1={padY + (1 - g / 100) * (h - padY * 2)}
-            y2={padY + (1 - g / 100) * (h - padY * 2)}
+            y1={padY + (1 - g / 100) * (plotH - padY * 2)}
+            y2={padY + (1 - g / 100) * (plotH - padY * 2)}
             stroke="var(--sep)"
             strokeWidth="1"
-            strokeDasharray={variant === "kpi" ? "2 5" : "3 4"}
-            opacity={variant === "kpi" ? 0.45 : 0.7}
+            strokeDasharray="3 4"
+            opacity="0.55"
           />
         ))}
+        <line x1={padX} x2={w - padX} y1={plotH} y2={plotH} stroke="var(--border)" strokeWidth="1" opacity="0.8" />
         <path d={areaPath} fill={`url(#${gradId})`} />
         <path
           d={linePath}
           fill="none"
           stroke={colorVar}
-          strokeWidth={strokeWidth}
+          strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
         />
-        {variant !== "kpi"
-          ? pts.map((p, i) => {
-              const isSpike = spikeIndices.includes(i);
-              const show = isSpike || i === 0 || i === pts.length - 1 || i === Math.floor(pts.length / 2);
-              if (!show) return null;
-              return (
-                <circle
-                  key={i}
-                  cx={p.x}
-                  cy={p.y}
-                  r={isSpike ? 4.5 : 3.5}
-                  fill={isSpike ? "var(--red)" : "var(--surface)"}
-                  stroke={isSpike ? "var(--red)" : colorVar}
-                  strokeWidth="2"
-                />
-              );
-            })
-          : spikeIndices.map((i) => {
-              const p = pts[i];
-              if (!p) return null;
-              return (
-                <circle
-                  key={i}
-                  cx={p.x}
-                  cy={p.y}
-                  r={3.5}
-                  fill="var(--red)"
-                  stroke="var(--red)"
-                  strokeWidth="1.5"
-                />
-              );
-            })}
+        {pts.map((p, i) => {
+          const isSpike = spikeIndices.includes(i);
+          return (
+            <circle
+              key={i}
+              cx={p.x}
+              cy={p.y}
+              r={isSpike ? 4 : 3}
+              fill={isSpike ? "var(--red)" : "var(--surface)"}
+              stroke={isSpike ? "var(--red)" : colorVar}
+              strokeWidth="1.5"
+            />
+          );
+        })}
+        {phases.map((phase, i) => (
+          <text
+            key={phase.label}
+            x={pts[i].x}
+            y={labelY}
+            textAnchor="middle"
+            className={styles.phaseChartLabelSvg}
+          >
+            {phase.label}
+          </text>
+        ))}
       </svg>
       {label ? <span className={styles.trendChartCaption}>{label}</span> : null}
     </div>

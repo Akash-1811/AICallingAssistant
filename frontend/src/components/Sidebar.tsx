@@ -1,3 +1,5 @@
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { Link, NavLink, useMatch, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { useTheme } from "../theme/ThemeProvider";
@@ -7,7 +9,65 @@ interface Props {
   isLive?: boolean;
 }
 
+// The nav itself is identical on desktop and mobile — only where it renders
+// differs: inline in the layout flow on desktop, or as an overlay drawer
+// (portaled to <body> so it can't be clipped by the shell's overflow:hidden)
+// on mobile. Desktop's DOM/CSS path is untouched either way.
 export function Sidebar({ isLive = false }: Props) {
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") setMobileOpen(false);
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [mobileOpen]);
+
+  return (
+    <>
+      {/* In normal document flow (not fixed) so it pushes page content down
+          instead of floating over it — only shown below 768px. */}
+      <div className={styles.mobileTopbar}>
+        <button
+          type="button"
+          className={styles.mobileMenuBtn}
+          onClick={() => setMobileOpen(true)}
+          aria-label="Open menu"
+        >
+          <MenuIcon />
+        </button>
+        <span className={styles.mobileTopbarBrand}>AI Sales Assistant</span>
+      </div>
+      <SidebarPanel isLive={isLive} variant="inline" />
+      {mobileOpen
+        ? createPortal(
+            <>
+              <div className={styles.backdrop} onClick={() => setMobileOpen(false)} />
+              <SidebarPanel isLive={isLive} variant="drawer" onNavigate={() => setMobileOpen(false)} />
+            </>,
+            document.body
+          )
+        : null}
+    </>
+  );
+}
+
+function SidebarPanel({
+  isLive = false,
+  variant,
+  onNavigate,
+}: {
+  isLive?: boolean;
+  variant: "inline" | "drawer";
+  onNavigate?: () => void;
+}) {
   const { theme, toggleTheme } = useTheme();
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -19,7 +79,12 @@ export function Sidebar({ isLive = false }: Props) {
   }
 
   return (
-    <aside className={styles.sidebar}>
+    <aside
+      className={`${styles.sidebar} ${variant === "drawer" ? styles.sidebarDrawer : styles.sidebarInline}`}
+      onClick={(e) => {
+        if (onNavigate && (e.target as HTMLElement).closest("a,button")) onNavigate();
+      }}
+    >
       <div className={styles.brand}>
         <div className={styles.logo} aria-hidden="true">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
@@ -36,6 +101,11 @@ export function Sidebar({ isLive = false }: Props) {
           <span className={styles.brandName}>AI Sales&nbsp;<wbr />Assistant</span>
           <span className={styles.brandSub}>Powered by HubCode</span>
         </div>
+        {variant === "drawer" ? (
+          <button type="button" className={styles.drawerCloseBtn} onClick={onNavigate} aria-label="Close menu">
+            <CloseIcon />
+          </button>
+        ) : null}
       </div>
 
       <nav className={styles.nav} aria-label="Main navigation">
@@ -177,6 +247,25 @@ function NavPlaceholder({
       </span>
       <span className={styles.navLabel}>{label}</span>
     </button>
+  );
+}
+
+function MenuIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <line x1="3" y1="6" x2="21" y2="6" />
+      <line x1="3" y1="12" x2="21" y2="12" />
+      <line x1="3" y1="18" x2="21" y2="18" />
+    </svg>
+  );
+}
+
+function CloseIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <line x1="18" y1="6" x2="6" y2="18" />
+      <line x1="6" y1="6" x2="18" y2="18" />
+    </svg>
   );
 }
 

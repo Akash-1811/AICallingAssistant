@@ -979,5 +979,61 @@
 }
 
 /* ─── Responsive ─────────────────────────────────────────────────────────────── */
-@media (max-width: 1060px) { .rightPanel { display: none; } }
+@media (max-width: 1060px) {
+  .rightPanel { display: none; }
+  /* Takes over the Start/End call control that lives in the (now-hidden) rail. */
+  .mobileCallControl { display: flex; flex-direction: column; gap: 0.5rem; }
+}
 @media (max-width: 700px)  { .mainCol { padding: 1rem; } .topbar { padding: 0 1rem; } }
+
+/* Below 768px the sidebar collapses into Sidebar's own mobile topbar, which
+   needs to stack ABOVE the workspace rather than sit beside it in the row. */
+@media (max-width: 768px) {
+  .shellMain {
+    flex-direction: column;
+  }
+
+  .siteFooter {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 0.5rem;
+    padding: 0.85rem 1rem;
+  }
+
+  .footerNav {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.9rem 1.1rem;
+  }
+
+  /* The live-call view is built as a fixed-height cockpit on desktop — the
+     transcript and suggestions panels each scroll internally within a
+     viewport-bound row, so the outer page never scrolls. On a phone there's
+     more content than fits in one screen, so that outer clip has to give way
+     to normal page scrolling instead. The transcript keeps its own scroll
+     region (a live call's transcript can get long); suggestions just grow
+     to fit their short, finite content. */
+  .contentLive {
+    max-height: none;
+    overflow: visible;
+    flex: 1 1 auto;
+  }
+
+  .mainColLive {
+    overflow: visible;
+  }
+
+  .transcriptBlock {
+    flex: none;
+    height: 46vh;
+  }
+
+  .suggestionBlock {
+    flex: none;
+  }
+}
+
+.mobileCallControl {
+  display: none;
+}
