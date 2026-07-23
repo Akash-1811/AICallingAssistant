@@ -13,6 +13,10 @@ export type ConversationSummary = {
   lead_speaker_id: number | null;
   audio_channels: number;
   rep_label?: string | null;
+  caller_name?: string | null;
+  caller_phone?: string | null;
+  caller_address?: string | null;
+  call_notes?: string | null;
 };
 
 export type TranscriptSegment = {
@@ -85,6 +89,7 @@ export type AnalyticsCallRow = {
   duration_sec: number | null;
   status: string;
   rep_label: string | null;
+  caller_name: string | null;
   has_audio: boolean;
   interest_examples: string[];
   concern_examples: string[];
@@ -147,6 +152,24 @@ export async function apiPost<T>(path: string): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+export async function apiPatch<T>(path: string, body: unknown): Promise<T> {
+  const res = await fetch(path, {
+    method: "PATCH",
+    headers: { ...apiHeaders(), "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (res.status === 401) {
+    handleUnauthorized();
+    throw new Error("Unauthorized");
+  }
+  if (!res.ok) {
+    const errBody = await res.json().catch(() => ({}));
+    const detail = (errBody as { detail?: string }).detail;
+    throw new Error(detail || res.statusText || "Request failed");
+  }
+  return res.json() as Promise<T>;
+}
+
 export async function apiDelete(path: string): Promise<void> {
   const res = await fetch(path, { method: "DELETE", headers: apiHeaders() });
   if (res.status === 401) {
@@ -203,6 +226,18 @@ export function getAnalysis(id: string) {
   return apiGet<CallAnalysis>(`/api/v1/conversations/${id}/analysis`);
 }
 
+/** Short-lived token scoped to one call's recording — lets a plain <audio>
+ *  element stream it directly, without putting the real login token in a URL. */
+export function getAudioToken(id: string) {
+  return apiGet<{ token: string; expires_in: number }>(
+    `/api/v1/conversations/${id}/audio-token`
+  );
+}
+
+export function audioStreamUrl(id: string, token: string): string {
+  return `/api/v1/conversations/${id}/audio?token=${encodeURIComponent(token)}`;
+}
+
 export function reanalyzeConversation(id: string) {
   return apiPost<{ conversation_id: string; status: string }>(
     `/api/v1/conversations/${id}/reanalyze`
@@ -212,6 +247,21 @@ export function reanalyzeConversation(id: string) {
 export function refreshCallMetrics(id: string) {
   return apiPost<{ conversation_id: string; status: string }>(
     `/api/v1/conversations/${id}/refresh-metrics`
+  );
+}
+
+export function updateCallerDetails(
+  id: string,
+  details: {
+    caller_name: string;
+    caller_phone?: string;
+    caller_address?: string;
+    call_notes?: string;
+  }
+) {
+  return apiPatch<{ conversation_id: string; caller_name: string | null }>(
+    `/api/v1/conversations/${id}/caller`,
+    details
   );
 }
 

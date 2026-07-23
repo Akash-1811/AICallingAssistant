@@ -87,6 +87,7 @@ class DeepgramService:
         transcript_queue: asyncio.Queue,
         outbound_queue: OutboundQueue,
         session_id: str,
+        language: str,
     ) -> None:
         """
         One Deepgram WebSocket lifecycle. If the remote closes or an error occurs,
@@ -98,7 +99,7 @@ class DeepgramService:
 
         async with self.client.listen.v1.connect(
             model=settings.DEEPGRAM_MODEL,
-            language=settings.DEEPGRAM_LANGUAGE,
+            language=language,
             smart_format="true",
             interim_results="true",
             endpointing=str(settings.REALTIME_DEEPGRAM_ENDPOINTING_MS),
@@ -108,9 +109,10 @@ class DeepgramService:
             multichannel="true",
         ) as connection:
             logger.info(
-                "Deepgram connected session=%s (model=%s, stereo 2ch)",
+                "Deepgram connected session=%s (model=%s, language=%s, stereo 2ch)",
                 session_id,
                 settings.DEEPGRAM_MODEL,
+                language,
             )
 
             async def sender() -> None:
@@ -202,6 +204,8 @@ class DeepgramService:
         transcript_queue: asyncio.Queue,
         outbound_queue: OutboundQueue,
         session_id: str,
+        *,
+        language: str | None = None,
     ) -> None:
         """
         Runs until cancelled. Reconnects on transient Deepgram failures so the
@@ -216,6 +220,7 @@ class DeepgramService:
                     transcript_queue,
                     outbound_queue,
                     session_id,
+                    language or settings.DEEPGRAM_LANGUAGE,
                 )
                 logger.debug("Deepgram connection cycle ended; reconnecting")
             except asyncio.CancelledError:

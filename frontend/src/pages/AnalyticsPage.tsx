@@ -293,7 +293,8 @@ export function AnalyticsPage() {
                 <thead>
                   <tr>
                     <th scope="col">When</th>
-                    <th scope="col">Caller</th>
+                    <th scope="col">Rep</th>
+                    <th scope="col">Client</th>
                     <th scope="col">Length</th>
                     <th scope="col">Result</th>
                     <th scope="col">Interest / concerns</th>
@@ -306,6 +307,7 @@ export function AnalyticsPage() {
                     <tr key={call.id}>
                       <td>{formatTimestamp(call.started_at)}</td>
                       <td>{call.rep_label?.trim() || "—"}</td>
+                      <td>{call.caller_name?.trim() || "—"}</td>
                       <td>
                         <div className={styles.lengthCell}>
                           <span>{formatDuration(call.duration_sec)}</span>

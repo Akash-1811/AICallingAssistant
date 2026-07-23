@@ -81,7 +81,8 @@ export function DrilldownModal({ drilldown, summary, onClose }: Props) {
               <thead>
                 <tr>
                   <th scope="col">When</th>
-                  <th scope="col">Caller</th>
+                  <th scope="col">Rep</th>
+                  <th scope="col">Client</th>
                   <th scope="col">Length</th>
                   {showConversion ? <th scope="col">Close chance</th> : null}
                   {showSignals ? <th scope="col">Interest</th> : null}
@@ -99,6 +100,7 @@ export function DrilldownModal({ drilldown, summary, onClose }: Props) {
                   <tr key={call.id}>
                     <td>{formatTimestamp(call.started_at)}</td>
                     <td>{call.rep_label?.trim() || "—"}</td>
+                    <td>{call.caller_name?.trim() || "—"}</td>
                     <td>{formatDuration(call.duration_sec)}</td>
                     {showConversion ? (
                       <td>

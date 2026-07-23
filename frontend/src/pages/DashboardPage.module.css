@@ -715,12 +715,6 @@
   transform: none;
 }
 
-.playBtnActive {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #fff;
-}
-
 .playIcon {
   font-size: 12px;
   transform: translateX(1px);
@@ -821,6 +815,196 @@
   gap: 16px;
   padding: 18px 18px 12px;
   border-bottom: 1px solid var(--sep);
+}
+
+/* ── Audio player modal — reuses .modalBackdrop/.modalHead, just narrower ── */
+.playerModal {
+  width: min(480px, 100%);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--r-lg);
+  border: 1px solid var(--sep);
+  background: var(--surface);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.35);
+}
+
+.playerHead {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 18px;
+  border-bottom: 1px solid var(--sep);
+}
+
+.playerHeadIcon {
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: var(--accent-dim, rgba(235, 87, 0, 0.1));
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.playerHeadText { flex: 1; min-width: 0; }
+
+.playerTitle { margin: 0; font-size: 17px; font-weight: 800; color: var(--text); }
+
+.playerSub {
+  margin: 3px 0 0;
+  color: var(--text-sub);
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.playerBody {
+  padding: 22px 20px 20px;
+}
+
+.hiddenAudioEl {
+  display: none;
+}
+
+.playerRow {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.playerPlayBtn {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background var(--t) var(--ease), transform var(--t) var(--ease);
+}
+
+.playerPlayBtn:hover { background: var(--accent-hover); }
+.playerPlayBtn:active { transform: scale(0.96); }
+.playerPlayBtn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.playerTrackCol {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Cross-browser range styling: a thin filled track using the --played custom
+   property (set inline per render), plus a small accent thumb. */
+.playerRange {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(
+    to right,
+    var(--accent) var(--played, 0%),
+    var(--surface-3) var(--played, 0%)
+  );
+  cursor: pointer;
+  outline: none;
+}
+
+.playerRange::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+}
+
+.playerRange::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+}
+
+.playerRange::-moz-range-track {
+  height: 6px;
+  border-radius: 999px;
+  background: transparent;
+}
+
+.playerRange:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.playerTimes {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-faint);
+}
+
+.playerMuteBtn {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--text-sub);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background var(--t) var(--ease), color var(--t) var(--ease);
+}
+
+.playerMuteBtn:hover { background: var(--surface-2); color: var(--text); }
+.playerMuteBtn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.playerLoadingBtn {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--surface-3);
+  animation: playerPulse 1.4s ease-in-out infinite;
+}
+
+.playerLoadingTrack {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--surface-3);
+  animation: playerPulse 1.4s ease-in-out infinite;
+}
+
+@keyframes playerPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .playerLoadingBtn,
+  .playerLoadingTrack {
+    animation: none;
+  }
 }
 
 .modalTitle { margin: 0; font-size: 18px; font-weight: 800; color: var(--text); }

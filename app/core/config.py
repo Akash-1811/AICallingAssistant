@@ -212,6 +212,15 @@ class Settings(BaseSettings):
 
 settings = Settings()
 
+# Call-language modes a rep can pick before starting a call. "multi" is the
+# default (Deepgram code-switches English + Hindi live). Each of the rest is a
+# single-language Deepgram model — Deepgram cannot code-switch between two
+# Indian regional languages, or a regional language and English, in one call,
+# so picking one of these locks Deepgram to just that language for the call.
+SUPPORTED_CALL_LANGUAGES: frozenset[str] = frozenset(
+    {"multi", "mr", "gu", "ta", "te", "kn", "bn"}
+)
+
 
 def validate_production_settings() -> None:
     """Refuse to start production with missing secrets or unsafe auth config."""

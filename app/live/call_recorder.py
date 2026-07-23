@@ -116,7 +116,13 @@ class RecordingQueue:
                 )
 
 
-async def start_conversation(conversation_id: str, *, audio_channels: int = 1) -> None:
+async def start_conversation(
+    conversation_id: str,
+    *,
+    audio_channels: int = 1,
+    call_language: str = "multi",
+    rep_label: str | None = None,
+) -> None:
     """
     Insert a new ``live`` conversation row when a WebSocket session opens.
 
@@ -138,6 +144,8 @@ async def start_conversation(conversation_id: str, *, audio_channels: int = 1) -
                 status="live",
                 audio_channels=audio_channels,
                 started_at=datetime.now(UTC),
+                rep_label=rep_label,
+                extra={"call_language": call_language},
             )
         )
         await session.commit()

@@ -43,11 +43,12 @@ export function buildAnalyticsCsv(summary: AnalyticsSummary): string {
     ...summary.weekly_volume.map((row) => [row.label, row.count]),
     [],
     ["Calls"],
-    ["ID", "Started at", "Caller", "Length (sec)", "Result", "Interest", "Close chance %", "Interest signs", "Concerns"],
+    ["ID", "Started at", "Rep", "Client", "Length (sec)", "Result", "Interest", "Close chance %", "Interest signs", "Concerns"],
     ...summary.calls.map((call) => [
       call.id,
       call.started_at,
       call.rep_label,
+      call.caller_name,
       call.duration_sec,
       OUTCOME_LABELS[call.outcome],
       call.interest_score,

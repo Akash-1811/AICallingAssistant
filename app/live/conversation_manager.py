@@ -160,6 +160,8 @@ def _migrate_session_state(state: dict[str, Any]) -> dict[str, Any]:
     state["history"] = [_normalize_history_item(x) for x in raw_hist]
     if "last_query" not in state:
         state["last_query"] = None
+    if "call_language" not in state:
+        state["call_language"] = "multi"
     return state
 
 
@@ -224,13 +226,14 @@ class ConversationManager:
                 return None
         return self._redis
 
-    async def create_session(self) -> str:
+    async def create_session(self, call_language: str = "multi") -> str:
         session_id = str(uuid.uuid4())
         r = await self._get_redis()
         empty = {
             "history": [],
             "last_query": None,
             "last_suggestion": None,
+            "call_language": call_language,
         }
         if r:
             await r.setex(
@@ -321,6 +324,7 @@ class ConversationManager:
             "last_query": state.get("last_query"),
             "last_suggestion": state.get("last_suggestion"),
             "recent_lead_snippet": recent[:2000],
+            "call_language": state.get("call_language", "multi"),
         }
 
     async def set_last_turn(self, session_id: str, query: str, suggestion: str) -> None:

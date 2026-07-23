@@ -518,6 +518,40 @@ def generate_analysis_text(prompt: str) -> tuple[str, str]:
     return generate_gemini_analysis(prompt, model), model
 
 
+# Post-call analysis runs in the background — nobody is staring at a spinner —
+# so a few seconds of retry is free insurance against the LLM provider's own
+# transient overload (e.g. Gemini's "503 UNAVAILABLE — high demand" error),
+# which is by far the most common reason a call lands on "failed" for no
+# fault of the call itself.
+_TRANSIENT_ANALYSIS_RETRIES = 2
+_TRANSIENT_ANALYSIS_BACKOFF_SECONDS = 4.0
+
+
+async def generate_analysis_with_retries(
+    prompt: str, conversation_id: str
+) -> tuple[str, str]:
+    last_error: Exception = RuntimeError("no attempt made")
+    for attempt in range(_TRANSIENT_ANALYSIS_RETRIES + 1):
+        try:
+            return await asyncio.to_thread(generate_analysis_text, prompt)
+        except Exception as e:
+            last_error = e
+            if attempt == _TRANSIENT_ANALYSIS_RETRIES:
+                break
+            wait = _TRANSIENT_ANALYSIS_BACKOFF_SECONDS * (attempt + 1)
+            logger.warning(
+                "Post-call analysis LLM call failed (attempt %d/%d), retrying in %.0fs "
+                "conversation=%s: %s",
+                attempt + 1,
+                _TRANSIENT_ANALYSIS_RETRIES + 1,
+                wait,
+                conversation_id,
+                e,
+            )
+            await asyncio.sleep(wait)
+    raise last_error
+
+
 async def run_post_call_analysis(conversation_id: str) -> None:
     """
     Load a saved call, compute metrics, run the LLM, and persist the report.
@@ -606,7 +640,7 @@ async def run_post_call_analysis(conversation_id: str) -> None:
             await session.refresh(row)
             analysis_row_id = row.id
 
-        raw, model_name = await asyncio.to_thread(generate_analysis_text, prompt)
+        raw, model_name = await generate_analysis_with_retries(prompt, conversation_id)
         parsed: dict[str, Any] | None = None
         for attempt in range(2):
             try:
@@ -618,7 +652,9 @@ async def run_post_call_analysis(conversation_id: str) -> None:
                         "Post-call JSON parse failed; retrying once conversation=%s",
                         conversation_id,
                     )
-                    raw, model_name = await asyncio.to_thread(generate_analysis_text, prompt)
+                    raw, model_name = await generate_analysis_with_retries(
+                        prompt, conversation_id
+                    )
                     continue
                 raise
         validated = PostCallAnalysisResult.model_validate(parsed)

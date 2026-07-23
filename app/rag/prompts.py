@@ -2,13 +2,34 @@
 
 from typing import Any
 
+# Romanized name for each single-language call mode. The call's language is
+# fixed once at the start of the call (see conversation_manager) — never
+# native script, always the Latin-script style a bilingual speaker texts in.
+_ROMANIZED_LANGUAGE_NAMES = {
+    "hi": "Hindi (Hinglish)",
+    "mr": "Marathi",
+    "gu": "Gujarati",
+    "ta": "Tamil",
+    "te": "Telugu",
+    "kn": "Kannada",
+    "bn": "Bengali",
+}
 
-def _language_instruction(language_hint: str) -> str:
-    if language_hint == "hi":
-        return "Answer in Hindi (Devanagari) when the agent's turn is Hindi-heavy; if it is clearly English-only, use English."
+
+def build_language_instruction(language_hint: str) -> str:
     if language_hint == "mixed":
-        return "Match the agent's language mix (English / Hindi code-switching) in your suggested lines."
-    return "Answer in English unless the agent's turn is clearly Hindi or Marathi — then match that language."
+        return (
+            "Match the agent's language mix (English / Hindi code-switching) in your "
+            "suggested lines — write any Hindi in Roman script (Hinglish), never Devanagari."
+        )
+    name = _ROMANIZED_LANGUAGE_NAMES.get(language_hint)
+    if name:
+        return (
+            f"Answer in simple, natural {name}, written in Roman/Latin script only — never "
+            "the native script — the way a bilingual speaker texts, mixing in English words "
+            "where that's natural."
+        )
+    return "Answer in English unless the agent's turn is clearly Hindi — then use Hinglish (Roman script)."
 
 
 def _conversation_session_block(ctx: dict[str, Any] | None) -> str:
@@ -49,7 +70,7 @@ def build_grounded_answer_prompt(
     """
     lang = (conversation_context or {}).get("language_hint") or "en"
     session = _conversation_session_block(conversation_context)
-    lang_line = _language_instruction(lang)
+    lang_line = build_language_instruction(lang)
     return f"""You are an expert real-estate sales enablement assistant on a LIVE call.
 
 Rules (strict):
@@ -80,7 +101,7 @@ def build_no_context_prompt(
     """When retrieval returns nothing; still multilingual via LLM."""
     lang = (conversation_context or {}).get("language_hint") or "en"
     session = _conversation_session_block(conversation_context)
-    lang_line = _language_instruction(lang)
+    lang_line = build_language_instruction(lang)
     return f"""You help a real-estate sales agent on a live call. No knowledge-base passages matched this query.
 
 Rules:
@@ -112,7 +133,7 @@ def build_live_suggestion_prompt(
     """
     lang = (conversation_context or {}).get("language_hint") or "en"
     session = _conversation_session_block(conversation_context)
-    lang_line = _language_instruction(lang)
+    lang_line = build_language_instruction(lang)
     ctx = numbered_context.strip() or "(no passages retrieved)"
     return f"""You are an expert real-estate sales assistant coaching a rep on a LIVE call.
 

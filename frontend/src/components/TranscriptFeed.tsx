@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { WsMessage } from "../types";
 import { buildRealtimeView, speakerLabel } from "../realtime";
 import { CopyButton } from "./CopyButton";
@@ -8,6 +8,9 @@ import styles from "./TranscriptFeed.module.css";
 interface Props {
   messages: WsMessage[];
 }
+
+const EMPTY_WELCOME =
+  "Hello! I'm ClaraAI. I'm ready to assist you today and help you have better sales conversations.";
 
 export function TranscriptFeed({ messages }: Props) {
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -41,7 +44,7 @@ export function TranscriptFeed({ messages }: Props) {
             <span className={styles.emptyIcon} aria-hidden="true">
               {"\u{1F3A4}"}
             </span>
-            <span>Transcript and suggested lines will appear as the conversation progresses.</span>
+            <TypingText text={EMPTY_WELCOME} />
           </div>
         ) : (
           <>
@@ -130,6 +133,66 @@ export function TranscriptFeed({ messages }: Props) {
         <div ref={bottomRef} />
       </div>
     </div>
+  );
+}
+
+function TypingText({
+  text,
+  startDelayMs = 220,
+  minCharDelayMs = 18,
+  maxCharDelayMs = 38,
+}: {
+  text: string;
+  startDelayMs?: number;
+  minCharDelayMs?: number;
+  maxCharDelayMs?: number;
+}) {
+  const [visible, setVisible] = useState(0);
+  const visibleRef = useRef(0);
+  useEffect(() => {
+    visibleRef.current = visible;
+  }, [visible]);
+
+  const reduceMotion = useMemo(() => {
+    if (typeof window === "undefined") return true;
+    return window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches ?? false;
+  }, []);
+
+  useEffect(() => {
+    if (reduceMotion) {
+      setVisible(text.length);
+      return;
+    }
+
+    let cancelled = false;
+    let charTimer: number | undefined;
+
+    const randDelay = () =>
+      Math.floor(minCharDelayMs + Math.random() * Math.max(1, maxCharDelayMs - minCharDelayMs));
+
+    const step = () => {
+      if (cancelled) return;
+      setVisible((v) => Math.min(text.length, v + 1));
+      if (visibleRef.current + 1 >= text.length) return;
+      charTimer = window.setTimeout(step, randDelay());
+    };
+
+    const startTimer = window.setTimeout(() => {
+      if (cancelled) return;
+      step();
+    }, startDelayMs);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(startTimer);
+      if (charTimer) window.clearTimeout(charTimer);
+    };
+  }, [text, reduceMotion, startDelayMs, minCharDelayMs, maxCharDelayMs]);
+
+  return (
+    <span className={styles.typingLine}>
+      {text.slice(0, visible)}
+    </span>
   );
 }
 

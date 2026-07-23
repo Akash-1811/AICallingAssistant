@@ -191,6 +191,7 @@ def build_call_analytics_row(
         "duration_sec": conv.duration_sec,
         "status": conv.status,
         "rep_label": conv.rep_label,
+        "caller_name": conv.caller_name,
         "has_audio": has_audio,
         "interest_examples": interest_examples,
         "concern_examples": concern_examples,

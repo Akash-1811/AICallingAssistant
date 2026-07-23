@@ -81,6 +81,33 @@ def decode_token(token: str) -> str | None:
     return sub if isinstance(sub, str) else None
 
 
+AUDIO_TOKEN_MINUTES = 30
+
+
+def create_audio_token(conversation_id: str) -> str:
+    """
+    A short-lived, single-purpose token that only unlocks one call's audio —
+    never the full session token. Lets a plain <audio src> element stream and
+    seek the recording without putting a real login credential in a URL
+    (URLs land in browser history and server access logs).
+    """
+    expire = datetime.now(UTC) + timedelta(minutes=AUDIO_TOKEN_MINUTES)
+    payload = {"scope": "audio", "conversation_id": conversation_id, "exp": expire}
+    return jwt.encode(payload, settings.JWT_SECRET, algorithm=ALGORITHM)
+
+
+def decode_audio_token(token: str) -> str | None:
+    """Return the conversation_id this token grants audio access to, or None."""
+    try:
+        payload = jwt.decode(token, settings.JWT_SECRET, algorithms=[ALGORITHM])
+    except jwt.PyJWTError:
+        return None
+    if payload.get("scope") != "audio":
+        return None
+    conversation_id = payload.get("conversation_id")
+    return conversation_id if isinstance(conversation_id, str) else None
+
+
 def user_to_out(user: User) -> UserOut:
     return UserOut(id=user.id, email=user.email, display_name=user.display_name)
 

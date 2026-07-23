@@ -61,6 +61,7 @@ export function CallReviewPage() {
               <span className={`${styles.status} ${styles[`status_${analysis?.status ?? conversation?.status}`] ?? ""}`}>
                 {statusLabel(analysis?.status ?? conversation?.status ?? "")}
               </span>
+              {conversation?.caller_name?.trim() ? ` · Client: ${conversation.caller_name.trim()}` : ""}
               {(analysis?.version ?? 0) > 1 ? (
                 <span className={styles.metaChip} title="This call has been re-analyzed">
                   Analysis v{analysis?.version}
@@ -82,6 +83,13 @@ export function CallReviewPage() {
             </button>
           </div>
         </header>
+
+        {conversation?.call_notes?.trim() ? (
+          <section className={styles.callNotes}>
+            <h2 className={styles.callNotesTitle}>Call notes</h2>
+            <p className={styles.callNotesBody}>{conversation.call_notes.trim()}</p>
+          </section>
+        ) : null}
 
         {loading ? <p className={styles.loading}>Loading call…</p> : null}
         {error ? <p className={styles.error}>{error}</p> : null}

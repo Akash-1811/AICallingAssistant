@@ -581,6 +581,40 @@
   cursor: not-allowed;
 }
 
+/* Deepgram fixes the call's language when it connects, so this only shows
+   before Start Session — never mid-call. */
+.callLanguagePicker {
+  display: flex;
+  flex-direction: column;
+  gap: 0.32rem;
+}
+
+.callLanguageLabel {
+  font-size: 0.66rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-sub);
+}
+
+.callLanguageSelect {
+  width: 100%;
+  padding: 0.55rem 0.7rem;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--sep);
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.callLanguageSelect:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 .sentimentCard {
   padding: 1rem 1.05rem;
   background: var(--surface-2);
@@ -963,10 +997,126 @@
 
 .apiInput::placeholder { color: var(--text-faint); }
 
+.callerNotesInput {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  border-radius: var(--r);
+  border: none;
+  background: var(--surface-2);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 0.86rem;
+  line-height: 1.45;
+  resize: vertical;
+  min-height: 4.5rem;
+  transition: background var(--t) var(--ease);
+}
+
+.callerNotesInput::placeholder { color: var(--text-faint); }
+
+.callerNotesInput:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 0;
+  background: var(--surface);
+}
+
 .apiInput:focus {
   outline: 2px solid var(--accent);
   outline-offset: 0;
   background: var(--surface);
+}
+
+.requiredMark {
+  color: var(--red-text, #b42318);
+  text-transform: none;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+/* ─── End-of-call caller-details modal — shares .answerModal chrome ─────────── */
+.callEndedHead {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 18px 18px 16px;
+  border-bottom: 1px solid var(--sep);
+}
+
+.callEndedIcon {
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: var(--teal-bg);
+  color: var(--teal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.callEndedHeadText { flex: 1; min-width: 0; }
+
+.callEndedTitle { margin: 0; font-size: 17px; font-weight: 800; color: var(--text); }
+
+.callEndedSub {
+  margin: 4px 0 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--text-sub);
+}
+
+.callerModalBody {
+  padding: 1.1rem 1.15rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.95rem;
+  overflow-y: auto;
+}
+
+.callerModalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  padding: 0.85rem 1.15rem;
+  border-top: 1px solid var(--sep);
+  flex-shrink: 0;
+}
+
+.callerSkipBtn {
+  padding: 0.55rem 1.05rem;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--sep);
+  background: var(--surface);
+  color: var(--text-sub);
+  font-family: var(--font);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.callerSkipBtn:hover {
+  background: var(--surface-2);
+}
+
+.callerSaveBtn {
+  padding: 0.55rem 1.2rem;
+  border-radius: var(--r-sm);
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  font-family: var(--font);
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.callerSaveBtn:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+.callerSaveBtn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .errorMsg {

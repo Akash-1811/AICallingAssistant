@@ -9,10 +9,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
-  authHeaders,
+  audioStreamUrl,
   formatDuration,
   formatTimestamp,
   getAnalyticsSummary,
+  getAudioToken,
   type AnalyticsCallRow,
   type AnalyticsSummary,
 } from "../api/conversations";
@@ -174,6 +175,218 @@ function CallListModal({
   );
 }
 
+function clockFormat(seconds: number): string {
+  if (!Number.isFinite(seconds) || seconds < 0) return "0:00";
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60);
+  return `${m}:${s.toString().padStart(2, "0")}`;
+}
+
+function AudioPlayerModal({
+  conversationId,
+  when,
+  client,
+  onClose,
+}: {
+  conversationId: string;
+  when: string;
+  client: string | null;
+  onClose: () => void;
+}) {
+  const closeRef = useRef<HTMLButtonElement>(null);
+  const audioElRef = useRef<HTMLAudioElement | null>(null);
+  const [src, setSrc] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [muted, setMuted] = useState(false);
+
+  useEffect(() => {
+    closeRef.current?.focus();
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [onClose]);
+
+  useEffect(() => {
+    let cancelled = false;
+    getAudioToken(conversationId)
+      .then(({ token }) => {
+        if (!cancelled) setSrc(audioStreamUrl(conversationId, token));
+      })
+      .catch((e) => {
+        if (!cancelled) setError(e instanceof Error ? e.message : "Audio unavailable");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [conversationId]);
+
+  function togglePlay() {
+    const el = audioElRef.current;
+    if (!el) return;
+    if (el.paused) void el.play().catch(() => {});
+    else el.pause();
+  }
+
+  function seek(value: number) {
+    const el = audioElRef.current;
+    if (!el) return;
+    el.currentTime = value;
+    setCurrentTime(value);
+  }
+
+  function toggleMute() {
+    const el = audioElRef.current;
+    if (!el) return;
+    el.muted = !el.muted;
+    setMuted(el.muted);
+  }
+
+  const progressPct = duration > 0 ? (currentTime / duration) * 100 : 0;
+
+  return (
+    <div className={styles.modalBackdrop} role="presentation" onClick={onClose}>
+      <div
+        className={styles.playerModal}
+        role="dialog"
+        aria-modal="true"
+        aria-label={`Call recording — ${when}`}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className={styles.playerHead}>
+          <div className={styles.playerHeadIcon} aria-hidden="true">
+            <HeadphonesIcon />
+          </div>
+          <div className={styles.playerHeadText}>
+            <h2 className={styles.playerTitle}>Call recording</h2>
+            <p className={styles.playerSub}>
+              {client ? `${client} · ${when}` : when}
+            </p>
+          </div>
+          <button ref={closeRef} type="button" className={styles.modalClose} onClick={onClose}>
+            ✕
+          </button>
+        </div>
+        <div className={styles.playerBody}>
+          {error ? (
+            <p className={styles.modalEmpty}>{error}</p>
+          ) : src ? (
+            <>
+              {/* eslint-disable-next-line jsx-a11y/media-has-caption -- a raw call recording has no captions to attach */}
+              <audio
+                ref={audioElRef}
+                src={src}
+                autoPlay
+                onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime)}
+                onLoadedMetadata={(e) => setDuration(e.currentTarget.duration)}
+                onPlay={() => setIsPlaying(true)}
+                onPause={() => setIsPlaying(false)}
+                onEnded={() => setIsPlaying(false)}
+                className={styles.hiddenAudioEl}
+              />
+              <div className={styles.playerRow}>
+                <button
+                  type="button"
+                  className={styles.playerPlayBtn}
+                  onClick={togglePlay}
+                  aria-label={isPlaying ? "Pause" : "Play"}
+                >
+                  {isPlaying ? <PauseIcon /> : <PlayIcon />}
+                </button>
+                <div className={styles.playerTrackCol}>
+                  <input
+                    type="range"
+                    className={styles.playerRange}
+                    style={{ "--played": `${progressPct}%` } as React.CSSProperties}
+                    min={0}
+                    max={duration || 0}
+                    step={0.1}
+                    value={currentTime}
+                    onChange={(e) => seek(Number(e.target.value))}
+                    aria-label="Seek"
+                  />
+                  <div className={styles.playerTimes}>
+                    <span>{clockFormat(currentTime)}</span>
+                    <span>{clockFormat(duration)}</span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  className={styles.playerMuteBtn}
+                  onClick={toggleMute}
+                  aria-label={muted ? "Unmute" : "Mute"}
+                >
+                  {muted ? <MutedIcon /> : <VolumeIcon />}
+                </button>
+              </div>
+            </>
+          ) : (
+            <div className={styles.playerRow}>
+              <div className={styles.playerLoadingBtn} aria-hidden="true" />
+              <div className={styles.playerTrackCol}>
+                <div className={styles.playerLoadingTrack} />
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function HeadphonesIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 18v-6a9 9 0 0 1 18 0v6" />
+      <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z" />
+    </svg>
+  );
+}
+
+function PlayIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M8 5v14l11-7z" />
+    </svg>
+  );
+}
+
+function PauseIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M6 5h4v14H6zM14 5h4v14h-4z" />
+    </svg>
+  );
+}
+
+function VolumeIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M11 5 6 9H2v6h4l5 4z" />
+      <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07" />
+    </svg>
+  );
+}
+
+function MutedIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M11 5 6 9H2v6h4l5 4z" />
+      <line x1="23" y1="9" x2="17" y2="15" />
+      <line x1="17" y1="9" x2="23" y2="15" />
+    </svg>
+  );
+}
+
 export function DashboardPage() {
   const [range, setRange] = useState<Range>("30d");
   const [summary, setSummary] = useState<AnalyticsSummary | null>(null);
@@ -181,11 +394,9 @@ export function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState<ModalState>(null);
 
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const audioUrlRef = useRef<string | null>(null);
-  const [playingId, setPlayingId] = useState<string | null>(null);
-  const [paused, setPaused] = useState(false);
-  const [audioBusyId, setAudioBusyId] = useState<string | null>(null);
+  const [player, setPlayer] = useState<{ id: string; when: string; client: string | null } | null>(
+    null
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -218,74 +429,6 @@ export function DashboardPage() {
   const maxVolume = useMemo(
     () => Math.max(...(summary?.weekly_volume ?? []).map((b) => b.count), 1),
     [summary]
-  );
-
-  const stopAudio = useCallback(() => {
-    if (audioRef.current) {
-      try {
-        audioRef.current.pause();
-      } catch {
-        /* ignore */
-      }
-      audioRef.current.src = "";
-      audioRef.current = null;
-    }
-    if (audioUrlRef.current) {
-      URL.revokeObjectURL(audioUrlRef.current);
-      audioUrlRef.current = null;
-    }
-    setPlayingId(null);
-    setPaused(false);
-    setAudioBusyId(null);
-  }, []);
-
-  useEffect(() => {
-    return () => stopAudio();
-  }, [stopAudio]);
-
-  const togglePlay = useCallback(
-    async (conversationId: string) => {
-      // Toggle play/pause for the currently loaded call.
-      if (playingId === conversationId && audioRef.current) {
-        if (audioRef.current.paused) {
-          await audioRef.current.play().catch(() => {});
-          setPaused(false);
-        } else {
-          audioRef.current.pause();
-          setPaused(true);
-        }
-        return;
-      }
-
-      stopAudio();
-      setAudioBusyId(conversationId);
-      try {
-        const res = await fetch(`/api/v1/conversations/${conversationId}/audio`, {
-          headers: authHeaders(),
-        });
-        if (!res.ok) {
-          const body = await res.json().catch(() => ({}));
-          const detail = (body as { detail?: string }).detail;
-          throw new Error(detail || res.statusText || "Audio unavailable");
-        }
-        const blob = await res.blob();
-        const url = URL.createObjectURL(blob);
-        audioUrlRef.current = url;
-        const audio = new Audio(url);
-        audioRef.current = audio;
-        audio.onended = () => stopAudio();
-        audio.onpause = () => setPaused(true);
-        audio.onplay = () => setPaused(false);
-        await audio.play();
-        setPlayingId(conversationId);
-      } catch (e) {
-        setError(e instanceof Error ? e.message : "Audio unavailable");
-        stopAudio();
-      } finally {
-        setAudioBusyId(null);
-      }
-    },
-    [authHeaders, playingId, stopAudio]
   );
 
   const closeModal = useCallback(() => setModal(null), []);
@@ -761,6 +904,8 @@ export function DashboardPage() {
                   <thead>
                     <tr>
                       <th scope="col">Call</th>
+                      <th scope="col">Rep</th>
+                      <th scope="col">Client</th>
                       <th scope="col">Result</th>
                       <th scope="col">Customer interest</th>
                       <th scope="col">What they said</th>
@@ -770,27 +915,23 @@ export function DashboardPage() {
                   <tbody>
                     {recentCalls.map((row) => {
                       const outcome = OUTCOME_LABELS[row.outcome];
-                      const isActive = playingId === row.id;
-                      const isBusy = audioBusyId === row.id;
                       return (
                         <tr key={row.id}>
                           <td>
                             <div className={styles.callCell}>
                               <button
                                 type="button"
-                                className={`${styles.playBtn} ${isActive ? styles.playBtnActive : ""}`}
-                                aria-label={
-                                  isBusy
-                                    ? "Loading audio"
-                                    : isActive && !paused
-                                      ? "Pause audio"
-                                      : "Play audio"
+                                className={styles.playBtn}
+                                aria-label="Play call recording"
+                                title={row.has_audio ? "Play" : "No audio for this call"}
+                                disabled={!row.has_audio}
+                                onClick={() =>
+                                  setPlayer({
+                                    id: row.id,
+                                    when: formatTimestamp(row.started_at),
+                                    client: row.caller_name?.trim() || null,
+                                  })
                                 }
-                                title={
-                                  row.has_audio ? (isActive && !paused ? "Pause" : "Play") : "No audio for this call"
-                                }
-                                disabled={isBusy || !row.has_audio}
-                                onClick={() => void togglePlay(row.id)}
                               >
                                 <span className={styles.playIcon} aria-hidden="true">
                                   ▶
@@ -804,6 +945,8 @@ export function DashboardPage() {
                               </div>
                             </div>
                           </td>
+                          <td>{row.rep_label?.trim() || "—"}</td>
+                          <td>{row.caller_name?.trim() || "—"}</td>
                           <td>
                             <span className={`${styles.pill} ${toneClass(outcome.tone)}`}>
                               {outcome.text}
@@ -864,6 +1007,14 @@ export function DashboardPage() {
       </div>
 
       {modal ? <CallListModal modal={modal} onClose={closeModal} /> : null}
+      {player ? (
+        <AudioPlayerModal
+          conversationId={player.id}
+          when={player.when}
+          client={player.client}
+          onClose={() => setPlayer(null)}
+        />
+      ) : null}
     </div>
   );
 }

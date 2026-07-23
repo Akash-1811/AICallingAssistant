@@ -103,6 +103,35 @@
   font-style: normal;
 }
 
+.typingLine {
+  display: inline-block;
+  max-width: 54ch;
+  white-space: normal;
+  padding: 0;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  animation: typingFade 180ms var(--ease) both;
+  color: var(--text-sub);
+  text-shadow: none;
+  font-size: 1.02rem;
+}
+
+@keyframes typingFade {
+  from {
+    opacity: 0;
+    filter: none;
+  }
+  to {
+    opacity: 1;
+    filter: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .typingLine { animation: none; }
+}
+
 .turn {
   display: flex;
   flex-direction: column;

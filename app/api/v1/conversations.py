@@ -18,15 +18,22 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Header, HTTPException, Query
 from fastapi.responses import FileResponse
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import desc, select
 
 from app.analysis.analytics_summary import build_analytics_summary, range_start_time
 from app.analysis.post_call_analysis import refresh_call_metrics, schedule_post_call_analysis
 from app.analysis.speech_metrics import compute_speech_metrics
-from app.api.v1.auth import User, get_current_user
+from app.api.v1.auth import (
+    AUDIO_TOKEN_MINUTES,
+    User,
+    create_audio_token,
+    decode_audio_token,
+    decode_token,
+    get_current_user,
+)
 from app.core.config import settings
 from app.scripts.demo_analysis import build_demo_analysis
 from app.scripts.demo_transcripts import build_scenarios
@@ -76,6 +83,10 @@ def conversation_to_dict(row: Conversation) -> dict[str, Any]:
         "lead_speaker_id": row.lead_speaker_id,
         "audio_channels": row.audio_channels,
         "rep_label": row.rep_label,
+        "caller_name": row.caller_name,
+        "caller_phone": row.caller_phone,
+        "caller_address": row.caller_address,
+        "call_notes": row.call_notes,
     }
 
 
@@ -205,10 +216,44 @@ async def get_analysis(conversation_id: str):
         }
 
 
-@router.get("/{conversation_id}/audio")
-async def get_audio(conversation_id: str):
-    """Download the recorded call audio as a WAV file (if available)."""
+@router.get("/{conversation_id}/audio-token")
+async def get_audio_token(conversation_id: str):
+    """
+    Mint a short-lived token scoped to this one call's recording — the media
+    player uses it (via ?token=) instead of the real login token, since a
+    plain <audio> element can't send an Authorization header.
+    """
     ensure_database_enabled()
+    async with get_db() as session:
+        conv = await session.get(Conversation, conversation_id)
+        if conv is None:
+            raise HTTPException(status_code=404, detail="Conversation not found")
+    return {
+        "token": create_audio_token(conversation_id),
+        "expires_in": AUDIO_TOKEN_MINUTES * 60,
+    }
+
+
+# Outside `router`: a plain <audio src> can't send an Authorization header, so
+# this one endpoint accepts either the normal header (existing callers) OR the
+# short-lived ?token= from /audio-token above — never the blanket dependency.
+audio_router = APIRouter(prefix="/conversations", tags=["conversations"])
+
+
+@audio_router.get("/{conversation_id}/audio")
+async def get_audio(
+    conversation_id: str,
+    token: str | None = Query(default=None),
+    authorization: str | None = Header(default=None),
+):
+    """Stream the recorded call audio as a WAV file (if available)."""
+    ensure_database_enabled()
+    authorized = token is not None and decode_audio_token(token) == conversation_id
+    if not authorized and authorization and authorization.lower().startswith("bearer "):
+        authorized = decode_token(authorization[7:].strip()) is not None
+    if not authorized:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
     # Ensure the conversation exists so ids can't be probed.
     async with get_db() as session:
         conv = await session.get(Conversation, conversation_id)
@@ -223,6 +268,49 @@ async def get_audio(conversation_id: str):
         media_type="audio/wav",
         filename=f"{conversation_id}.wav",
     )
+
+
+class CallerDetailsBody(BaseModel):
+    caller_name: str = Field(..., max_length=120)
+    caller_phone: str | None = Field(default=None, max_length=30)
+    caller_address: str | None = Field(default=None, max_length=500)
+    call_notes: str | None = Field(default=None, max_length=4000)
+
+    @field_validator("caller_name")
+    @classmethod
+    def name_not_blank(cls, v: str) -> str:
+        v = v.strip()
+        if not v:
+            raise ValueError("caller_name cannot be blank")
+        return v
+
+    @field_validator("caller_phone", "caller_address", "call_notes")
+    @classmethod
+    def blank_to_none(cls, v: str | None) -> str | None:
+        v = (v or "").strip()
+        return v or None
+
+
+@router.patch("/{conversation_id}/caller")
+async def update_caller_details(conversation_id: str, body: CallerDetailsBody):
+    """Save the customer's name/phone/address/notes captured at the end of a call."""
+    ensure_database_enabled()
+    async with get_db() as session:
+        conv = await session.get(Conversation, conversation_id)
+        if conv is None:
+            raise HTTPException(status_code=404, detail="Conversation not found")
+        conv.caller_name = body.caller_name
+        conv.caller_phone = body.caller_phone
+        conv.caller_address = body.caller_address
+        conv.call_notes = body.call_notes
+        await session.commit()
+        return {
+            "conversation_id": conversation_id,
+            "caller_name": conv.caller_name,
+            "caller_phone": conv.caller_phone,
+            "caller_address": conv.caller_address,
+            "call_notes": conv.call_notes,
+        }
 
 
 class SeedDemoBody(BaseModel):

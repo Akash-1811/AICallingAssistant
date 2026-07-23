@@ -20,7 +20,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from sqlalchemy import JSON, DateTime, ForeignKey, Integer, String, Text, func, select
+from sqlalchemy import JSON, DateTime, ForeignKey, Integer, String, Text, func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
@@ -56,6 +56,14 @@ class Conversation(Base):
     audio_channels: Mapped[int] = mapped_column(Integer, default=1)
     workspace_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
     rep_label: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    # Captured from the end-of-call form (see PATCH /conversations/{id}/caller) —
+    # not extracted automatically, since the analysis LLM never sees a customer
+    # name in the transcript itself.
+    caller_name: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    caller_phone: Mapped[str | None] = mapped_column(String(30), nullable=True)
+    caller_address: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    # Free-text note the rep leaves about the call itself (not a client field).
+    call_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     extra: Mapped[dict[str, Any]] = mapped_column(JsonColumn, default=dict)
 
     segments: Mapped[list[TranscriptSegmentRow]] = relationship(
@@ -184,6 +192,38 @@ def create_db_engine():
     return create_async_engine(url, echo=False)
 
 
+# Columns added to `conversations` after its initial release. `create_all` only
+# creates missing TABLES, never alters an existing one — there's no Alembic in
+# this project — so a real deployment with existing rows needs these added by
+# hand. Safe to run on every startup: each column is only added once.
+_NEW_CONVERSATION_COLUMNS: dict[str, str] = {
+    "caller_name": "VARCHAR(120)",
+    "caller_phone": "VARCHAR(30)",
+    "caller_address": "VARCHAR(500)",
+    "call_notes": "TEXT",
+}
+
+
+async def add_missing_conversation_columns(conn) -> None:
+    dialect = conn.dialect.name
+    if dialect == "postgresql":
+        rows = await conn.execute(
+            text(
+                "SELECT column_name FROM information_schema.columns "
+                "WHERE table_name = 'conversations'"
+            )
+        )
+        existing = {row[0] for row in rows}
+    else:
+        rows = await conn.execute(text("PRAGMA table_info(conversations)"))
+        existing = {row[1] for row in rows}
+
+    for name, coltype in _NEW_CONVERSATION_COLUMNS.items():
+        if name not in existing:
+            await conn.execute(text(f"ALTER TABLE conversations ADD COLUMN {name} {coltype}"))
+            logger.info("Migrated: added conversations.%s", name)
+
+
 async def init_database() -> None:
     """
     Connect to the database and create tables if they do not exist.
@@ -206,6 +246,7 @@ async def init_database() -> None:
     db_session_factory = async_sessionmaker(db_engine, expire_on_commit=False)
     async with db_engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        await add_missing_conversation_columns(conn)
     logger.info("Call database ready")
 
 

@@ -106,6 +106,30 @@
   border: 1px solid var(--red-border);
 }
 
+.callNotes {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 0.9rem 1.1rem;
+}
+
+.callNotesTitle {
+  margin: 0 0 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-faint);
+}
+
+.callNotesBody {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: var(--text);
+  white-space: pre-wrap;
+}
+
 /* ─── KPI strip (always visible) ───────────────────────────────────────────── */
 
 .kpiStrip {

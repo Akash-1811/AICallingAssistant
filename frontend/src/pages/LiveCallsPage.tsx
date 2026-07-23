@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useOutletContext } from "react-router-dom";
-import { authHeaders } from "../api/conversations";
+import { authHeaders, updateCallerDetails } from "../api/conversations";
 import type { AssistantWsApi } from "../hooks/useAssistantWs";
 import { useTranscriptPictureInPicture } from "../hooks/useTranscriptPictureInPicture";
 import { buildRealtimeView } from "../realtime";
@@ -13,6 +13,45 @@ function formatElapsed(seconds: number): string {
   const m = Math.floor(seconds / 60).toString().padStart(2, "0");
   const s = (seconds % 60).toString().padStart(2, "0");
   return `${m}:${s}`;
+}
+
+// Deepgram locks the call to one language mode once it connects — it can't
+// switch mid-call — so this is picked before Start Session, not during.
+// "multi" code-switches English + Hindi live; the rest are single-language
+// models, so mixing in English mid-call will transcribe poorly for those.
+const CALL_LANGUAGE_OPTIONS: { value: string; label: string }[] = [
+  { value: "multi", label: "English + Hindi (mixed)" },
+  { value: "mr", label: "Marathi" },
+  { value: "gu", label: "Gujarati" },
+  { value: "ta", label: "Tamil" },
+  { value: "te", label: "Telugu" },
+  { value: "kn", label: "Kannada" },
+  { value: "bn", label: "Bengali" },
+];
+
+function CallLanguageSelect({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (next: string) => void;
+}) {
+  return (
+    <label className={styles.callLanguagePicker}>
+      <span className={styles.callLanguageLabel}>Call language</span>
+      <select
+        className={styles.callLanguageSelect}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+      >
+        {CALL_LANGUAGE_OPTIONS.map((opt) => (
+          <option key={opt.value} value={opt.value}>
+            {opt.label}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
 }
 
 export function LiveCallsPage() {
@@ -29,12 +68,22 @@ export function LiveCallsPage() {
     leadSpeakerId,
   } = useOutletContext<AssistantWsApi>();
 
+  const [callLanguage, setCallLanguage] = useState("multi");
   const [manualQuestion, setManualQuestion] = useState("");
   const [manualAnswer, setManualAnswer] = useState("");
   const [manualLoading, setManualLoading] = useState(false);
   const [manualError, setManualError] = useState<string | null>(null);
   const [manualAnswerModalOpen, setManualAnswerModalOpen] = useState(false);
   const answerModalCloseRef = useRef<HTMLButtonElement>(null);
+
+  const [endCallModalOpen, setEndCallModalOpen] = useState(false);
+  const [endingSessionId, setEndingSessionId] = useState<string | null>(null);
+  const [callerName, setCallerName] = useState("");
+  const [callerPhone, setCallerPhone] = useState("");
+  const [callerAddress, setCallerAddress] = useState("");
+  const [callNotes, setCallNotes] = useState("");
+  const [callerSaving, setCallerSaving] = useState(false);
+  const [callerSaveError, setCallerSaveError] = useState<string | null>(null);
 
   const isLive = status === "live";
   const isBusy = status === "connecting";
@@ -140,7 +189,40 @@ export function LiveCallsPage() {
   }, [manualAnswerModalOpen]);
 
   function handleStart() {
-    void connect("", { captureTabAudio: true });
+    void connect("", { captureTabAudio: true, language: callLanguage });
+  }
+
+  function handleEndCall() {
+    // Capture the id being ended now — disconnect() clears sessionId on its
+    // next render, so waiting for lastEndedSessionId here would be stale.
+    setEndingSessionId(sessionId);
+    disconnect();
+    setCallerName("");
+    setCallerPhone("");
+    setCallerAddress("");
+    setCallNotes("");
+    setCallerSaveError(null);
+    setEndCallModalOpen(true);
+  }
+
+  async function handleSaveCallerDetails() {
+    const name = callerName.trim();
+    if (!endingSessionId || !name || callerSaving) return;
+    setCallerSaving(true);
+    setCallerSaveError(null);
+    try {
+      await updateCallerDetails(endingSessionId, {
+        caller_name: name,
+        caller_phone: callerPhone.trim() || undefined,
+        caller_address: callerAddress.trim() || undefined,
+        call_notes: callNotes.trim() || undefined,
+      });
+      setEndCallModalOpen(false);
+    } catch (e) {
+      setCallerSaveError(e instanceof Error ? e.message : "Couldn't save — try again.");
+    } finally {
+      setCallerSaving(false);
+    }
   }
 
   async function handleManualAsk() {
@@ -246,23 +328,26 @@ export function LiveCallsPage() {
                 <button
                   type="button"
                   className={styles.liveEndCallBtn}
-                  onClick={disconnect}
+                  onClick={handleEndCall}
                   aria-label="End call"
                 >
                   <HangupPhoneIcon />
                 </button>
               </div>
             ) : (
-              <button
-                className={styles.startBtn}
-                type="button"
-                onClick={handleStart}
-                disabled={isBusy}
-                aria-busy={isBusy}
-              >
-                <MicIcon />
-                {isBusy ? "Connecting…" : "Start Session"}
-              </button>
+              <>
+                <CallLanguageSelect value={callLanguage} onChange={setCallLanguage} />
+                <button
+                  className={styles.startBtn}
+                  type="button"
+                  onClick={handleStart}
+                  disabled={isBusy}
+                  aria-busy={isBusy}
+                >
+                  <MicIcon />
+                  {isBusy ? "Connecting…" : "Start Session"}
+                </button>
+              </>
             )}
             {error && <p className={styles.errorMsg}>{error}</p>}
           </div>
@@ -301,23 +386,26 @@ export function LiveCallsPage() {
                 <button
                   type="button"
                   className={styles.liveEndCallBtn}
-                  onClick={disconnect}
+                  onClick={handleEndCall}
                   aria-label="End call"
                 >
                   <HangupPhoneIcon />
                 </button>
               </div>
             ) : (
-              <button
-                className={styles.startBtn}
-                type="button"
-                onClick={handleStart}
-                disabled={isBusy}
-                aria-busy={isBusy}
-              >
-                <MicIcon />
-                {isBusy ? "Connecting…" : "Start Session"}
-              </button>
+              <>
+                <CallLanguageSelect value={callLanguage} onChange={setCallLanguage} />
+                <button
+                  className={styles.startBtn}
+                  type="button"
+                  onClick={handleStart}
+                  disabled={isBusy}
+                  aria-busy={isBusy}
+                >
+                  <MicIcon />
+                  {isBusy ? "Connecting…" : "Start Session"}
+                </button>
+              </>
             )}
             {error && <p className={styles.errorMsg}>{error}</p>}
           </div>
@@ -456,6 +544,107 @@ export function LiveCallsPage() {
           </div>
         </div>
       )}
+
+      {endCallModalOpen && (
+        <div
+          className={styles.answerModalBackdrop}
+          role="presentation"
+          onClick={() => setEndCallModalOpen(false)}
+        >
+          <div
+            className={styles.answerModal}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="end-call-modal-title"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className={styles.callEndedHead}>
+              <div className={styles.callEndedIcon} aria-hidden="true">
+                <CheckCircleIcon />
+              </div>
+              <div className={styles.callEndedHeadText}>
+                <h2 id="end-call-modal-title" className={styles.callEndedTitle}>
+                  Call ended
+                </h2>
+                <p className={styles.callEndedSub}>
+                  Add the customer's details so this call is easy to find later.
+                </p>
+              </div>
+              <button
+                type="button"
+                className={styles.answerModalClose}
+                onClick={() => setEndCallModalOpen(false)}
+                aria-label="Close"
+              >
+                <ModalCloseIcon />
+              </button>
+            </div>
+            <div className={styles.callerModalBody}>
+              <label className={styles.apiField}>
+                <span className={styles.apiLabel}>
+                  Name <span className={styles.requiredMark}>Required</span>
+                </span>
+                <input
+                  className={styles.apiInput}
+                  type="text"
+                  value={callerName}
+                  onChange={(e) => setCallerName(e.target.value)}
+                  placeholder="Customer's name"
+                  autoFocus
+                />
+              </label>
+              <label className={styles.apiField}>
+                <span className={styles.apiLabel}>Contact number</span>
+                <input
+                  className={styles.apiInput}
+                  type="tel"
+                  value={callerPhone}
+                  onChange={(e) => setCallerPhone(e.target.value)}
+                  placeholder="Optional"
+                />
+              </label>
+              <label className={styles.apiField}>
+                <span className={styles.apiLabel}>Address</span>
+                <input
+                  className={styles.apiInput}
+                  type="text"
+                  value={callerAddress}
+                  onChange={(e) => setCallerAddress(e.target.value)}
+                  placeholder="Optional"
+                />
+              </label>
+              <label className={styles.apiField}>
+                <span className={styles.apiLabel}>Notes</span>
+                <textarea
+                  className={styles.callerNotesInput}
+                  value={callNotes}
+                  onChange={(e) => setCallNotes(e.target.value)}
+                  placeholder="Anything worth remembering about this call — optional"
+                  rows={3}
+                />
+              </label>
+              {callerSaveError && <p className={styles.errorMsg}>{callerSaveError}</p>}
+            </div>
+            <div className={styles.callerModalActions}>
+              <button
+                type="button"
+                className={styles.callerSkipBtn}
+                onClick={() => setEndCallModalOpen(false)}
+              >
+                Skip
+              </button>
+              <button
+                type="button"
+                className={styles.callerSaveBtn}
+                onClick={() => void handleSaveCallerDetails()}
+                disabled={!callerName.trim() || callerSaving}
+              >
+                {callerSaving ? "Saving…" : "Save"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
@@ -465,6 +654,15 @@ function PipGlyph() {
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <rect x="3" y="4" width="12" height="9" rx="1.5" stroke="currentColor" strokeWidth="1.8" />
       <rect x="11" y="9" width="10" height="11" rx="1.5" stroke="currentColor" strokeWidth="1.8" />
+    </svg>
+  );
+}
+
+function CheckCircleIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+      <polyline points="22 4 12 14.01 9 11.01" />
     </svg>
   );
 }

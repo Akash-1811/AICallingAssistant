@@ -10,8 +10,8 @@ from collections import defaultdict
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 from app.analysis.post_call_analysis import schedule_post_call_analysis
-from app.api.v1.auth import decode_token
-from app.core.config import settings
+from app.api.v1.auth import User, decode_token
+from app.core.config import SUPPORTED_CALL_LANGUAGES, settings
 from app.core.logging import get_logger
 from app.live.audio_recording import WavRecordingWriter
 from app.live.call_recorder import (
@@ -23,7 +23,7 @@ from app.live.call_recorder import (
 from app.live.conversation_manager import conversation_manager
 from app.live.deepgram_service import DeepgramService
 from app.live.transcript_processor import TranscriptProcessor
-from app.storage.call_store import database_enabled
+from app.storage.call_store import database_enabled, get_db
 
 logger = get_logger(__name__)
 
@@ -37,17 +37,40 @@ _POLICY_VIOLATION = 1008
 _active_sessions: dict[str, int] = defaultdict(int)
 
 
-async def _authenticate(websocket: WebSocket) -> str | None:
-    """
-    Return the session owner (a user id, or "api-key") or None to refuse.
+def resolve_call_language(body: dict) -> str:
+    """Validate the client's chosen call language against the supported set —
+    this value flows straight into Deepgram's `language=` param, so anything
+    unrecognized falls back to the safe default rather than being passed through."""
+    requested = body.get("language")
+    return requested if requested in SUPPORTED_CALL_LANGUAGES else "multi"
 
-    Auth arrives in the FIRST WebSocket message — {"type": "auth", "token": …}
-    or {"type": "auth", "api_key": …} — never in the URL, so credentials never
-    reach access logs. Non-browser clients may instead send the X-API-Key header.
+
+async def get_rep_display_name(owner: str) -> str | None:
+    """Best-effort display name of the logged-in rep, for the call record —
+    never the customer's name (that's captured separately, see caller_name)."""
+    if owner == "api-key" or not database_enabled():
+        return None
+    async with get_db() as session:
+        user = await session.get(User, owner)
+    if user is None:
+        return None
+    label = (user.display_name or user.email.split("@")[0]).strip()
+    return label or None
+
+
+async def _authenticate(websocket: WebSocket) -> tuple[str, str] | None:
+    """
+    Return (session owner, call_language) or None to refuse. Owner is a user
+    id, or "api-key".
+
+    Auth arrives in the FIRST WebSocket message — {"type": "auth", "token": …,
+    "language": …} or {"type": "auth", "api_key": …, "language": …} — never in
+    the URL, so credentials never reach access logs. Non-browser clients may
+    instead send the X-API-Key header (language then defaults to "multi").
     """
     internal_key = settings.INTERNAL_API_KEY
     if internal_key and websocket.headers.get("x-api-key") == internal_key:
-        return "api-key"
+        return "api-key", "multi"
     try:
         raw = await asyncio.wait_for(
             websocket.receive_text(), timeout=settings.WS_AUTH_TIMEOUT_SECONDS
@@ -57,11 +80,12 @@ async def _authenticate(websocket: WebSocket) -> str | None:
         return None
     if body.get("type") != "auth":
         return None
+    call_language = resolve_call_language(body)
     user_id = decode_token(body.get("token") or "")
     if user_id:
-        return user_id
+        return user_id, call_language
     if internal_key and body.get("api_key") == internal_key:
-        return "api-key"
+        return "api-key", call_language
     return None
 
 
@@ -69,10 +93,11 @@ async def _authenticate(websocket: WebSocket) -> str | None:
 async def realtime_assistant(websocket: WebSocket):
     await websocket.accept()
 
-    owner = await _authenticate(websocket)
-    if owner is None:
+    auth = await _authenticate(websocket)
+    if auth is None:
         await websocket.close(code=_POLICY_VIOLATION)
         return
+    owner, call_language = auth
 
     try:
         deepgram = DeepgramService()
@@ -97,8 +122,11 @@ async def realtime_assistant(websocket: WebSocket):
     _active_sessions[owner] += 1
 
     # Audio is always interleaved stereo: channel 0 = rep mic, channel 1 = tab audio.
-    session_id = await conversation_manager.create_session()
-    await start_conversation(session_id, audio_channels=2)
+    session_id = await conversation_manager.create_session(call_language=call_language)
+    rep_label = await get_rep_display_name(owner)
+    await start_conversation(
+        session_id, audio_channels=2, call_language=call_language, rep_label=rep_label
+    )
     await websocket.send_json({"type": "session_started", "session_id": session_id})
     logger.info("Realtime session started: %s", session_id)
 
@@ -157,6 +185,7 @@ async def realtime_assistant(websocket: WebSocket):
             transcript_queue,
             outbound_queue,
             session_id,
+            language=call_language,
         ),
         name=f"deepgram-{session_id}",
     )

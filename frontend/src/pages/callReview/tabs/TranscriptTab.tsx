@@ -25,7 +25,7 @@ export function TranscriptTab({
 
   function speakerName(seg: TranscriptSegment): string {
     if (seg.role === "rep") return conversation?.rep_label?.trim() || "Rep";
-    if (seg.role === "prospect") return "Prospect";
+    if (seg.role === "prospect") return conversation?.caller_name?.trim() || "Prospect";
     return seg.role;
   }
 

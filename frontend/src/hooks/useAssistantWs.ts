@@ -98,7 +98,10 @@ function buildWsUrl(): string {
 
 // ─── Hook ─────────────────────────────────────────────────────────────────────
 
-export type ConnectOptions = PcmStreamOptions;
+export type ConnectOptions = PcmStreamOptions & {
+  /** Deepgram call-language mode ("multi" | "mr" | "gu" | "ta" | "te" | "kn" | "bn"). Defaults to "multi" server-side. */
+  language?: string;
+};
 
 export interface AssistantWsApi {
   status: SessionState["status"];
@@ -163,11 +166,8 @@ export function useAssistantWs(): AssistantWsApi {
       // before starting the session (and ignores everything else until then).
       ws.onopen = () => {
         const token = getStoredToken();
-        ws.send(
-          JSON.stringify(
-            token ? { type: "auth", token } : { type: "auth", api_key: apiKey.trim() }
-          )
-        );
+        const auth = token ? { token } : { api_key: apiKey.trim() };
+        ws.send(JSON.stringify({ type: "auth", ...auth, language: options?.language }));
       };
 
       ws.onmessage = (ev) => {

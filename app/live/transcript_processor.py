@@ -164,7 +164,15 @@ class TranscriptProcessor:
         try:
             retrieval_query = normalize_live_query(focused_query) or question
             rag_ctx = await conversation_manager.get_rag_context(session_id)
-            lang_hint = dominant_language_hint(question)
+            call_language = rag_ctx.get("call_language", "multi")
+            # "multi" genuinely code-switches, so language still varies turn to
+            # turn — keep detecting it per turn. A single regional language is
+            # fixed for the whole call (that's the point of picking it), so use
+            # it directly rather than re-guessing from Devanagari-range ratios,
+            # which can't tell Marathi from Hindi anyway.
+            lang_hint = (
+                dominant_language_hint(question) if call_language == "multi" else call_language
+            )
             conversation_context = {
                 "previous_query": rag_ctx.get("last_query"),
                 "previous_suggestion": rag_ctx.get("last_suggestion"),
