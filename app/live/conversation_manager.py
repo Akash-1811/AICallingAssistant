@@ -162,6 +162,8 @@ def _migrate_session_state(state: dict[str, Any]) -> dict[str, Any]:
         state["last_query"] = None
     if "call_language" not in state:
         state["call_language"] = "multi"
+    if "audio_channels" not in state:
+        state["audio_channels"] = 2
     return state
 
 
@@ -182,14 +184,23 @@ def _lead_turn_strings(
     ]
 
 
-def _lead_speaker_id(speakers_seen: list[int]) -> int | None:
+def _lead_speaker_id(speakers_seen: list[int], audio_channels: int) -> int | None:
     """
     Speaker ids are physical audio channels: 0 = the rep's mic, 1 = the shared
-    meeting-tab audio (the customer). Once the tab has spoken, channel 1 is the
-    lead. Mic-only sessions (demos, phone on speaker) have a single channel —
-    treat it as the lead so the assistant still responds.
+    meeting-tab audio (the customer) — fixed by the capture setup, not guessed.
+
+    On a real two-channel call, channel 1 *is* the customer from the very first
+    frame, even before they've said a word — deciding this only once the tab
+    has actually spoken previously mislabeled the rep's own opening greeting
+    (channel 0, before the customer's first reply) as the customer's speech,
+    since "only one channel has spoken so far" was true for the rep's greeting
+    too. Only fall back to "whichever one channel we've heard" when the call
+    genuinely has no second channel to wait for (audio_channels == 1 — mic-only,
+    e.g. a phone held on speaker) — there, there truly is no way to tell the
+    two speakers apart, so treat the one channel present as the lead so the
+    assistant still responds.
     """
-    if 1 in speakers_seen:
+    if audio_channels >= 2:
         return 1
     if len(speakers_seen) == 1:
         return speakers_seen[0]
@@ -226,7 +237,9 @@ class ConversationManager:
                 return None
         return self._redis
 
-    async def create_session(self, call_language: str = "multi") -> str:
+    async def create_session(
+        self, call_language: str = "multi", audio_channels: int = 2
+    ) -> str:
         session_id = str(uuid.uuid4())
         r = await self._get_redis()
         empty = {
@@ -234,6 +247,7 @@ class ConversationManager:
             "last_query": None,
             "last_suggestion": None,
             "call_language": call_language,
+            "audio_channels": audio_channels,
         }
         if r:
             await r.setex(
@@ -297,7 +311,7 @@ class ConversationManager:
             history = state["history"]
 
         speakers_seen = _speakers_in_history(history)
-        lead = _lead_speaker_id(speakers_seen)
+        lead = _lead_speaker_id(speakers_seen, state.get("audio_channels", 2))
 
         window = settings.CONTEXT_QUERY_WINDOW
         lead_turns = _lead_turn_strings(history, lead)
@@ -317,7 +331,7 @@ class ConversationManager:
         """Prior turn + recent lead speech for session-aware prompts."""
         state = await self._load(session_id)
         history: list[dict[str, Any]] = state.get("history") or []
-        lead = _lead_speaker_id(_speakers_in_history(history))
+        lead = _lead_speaker_id(_speakers_in_history(history), state.get("audio_channels", 2))
         lead_turns = _lead_turn_strings(history, lead)
         recent = " ".join(lead_turns[-2:]) if lead_turns else ""
         return {

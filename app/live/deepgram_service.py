@@ -210,9 +210,20 @@ class DeepgramService:
         """
         Runs until cancelled. Reconnects on transient Deepgram failures so the
         client WebSocket can keep sending PCM without the whole session dying.
+
+        Retrying forever is right for a blip, but silently — a rep watching a
+        normal-looking "Live" call with no error has no way to know Deepgram
+        has stopped hearing them, and every word since is simply never saved.
+        After a few failed attempts in a row this tells the frontend so the
+        call, not just the log, reflects reality; it clears the moment a
+        connection succeeds again.
         """
         backoff = 0.5
         max_backoff = 8.0
+        consecutive_failures = 0
+        stall_reported = False
+        STALL_WARNING_AFTER = 3
+
         while True:
             try:
                 await self._one_connection(
@@ -226,15 +237,42 @@ class DeepgramService:
             except asyncio.CancelledError:
                 raise
             except Exception as e:
+                consecutive_failures += 1
                 logger.warning(
-                    "Deepgram connection lost (%s); reconnecting in %.1fs",
+                    "Deepgram connection lost (%s); reconnecting in %.1fs (attempt %d)",
                     e,
                     backoff,
+                    consecutive_failures,
                 )
+                if consecutive_failures >= STALL_WARNING_AFTER and not stall_reported:
+                    stall_reported = True
+                    await outbound_queue.put(
+                        {
+                            "type": "warning",
+                            "session_id": session_id,
+                            "kind": "deepgram",
+                            "message": (
+                                "Transcription has lost its connection and is trying to "
+                                "reconnect — the call is still recording, but new speech "
+                                "may not be captured until it recovers."
+                            ),
+                        }
+                    )
                 try:
                     await asyncio.sleep(backoff)
                 except asyncio.CancelledError:
                     raise
                 backoff = min(backoff * 1.5, max_backoff)
                 continue
+            if stall_reported:
+                stall_reported = False
+                await outbound_queue.put(
+                    {
+                        "type": "warning",
+                        "session_id": session_id,
+                        "kind": "deepgram",
+                        "message": None,
+                    }
+                )
+            consecutive_failures = 0
             backoff = 0.5

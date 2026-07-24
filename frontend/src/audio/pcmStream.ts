@@ -145,6 +145,7 @@ function waitForWebSocketOpen(ws: WebSocket): Promise<void> {
 export async function startPcmToWebSocket(
   ws: WebSocket,
   onError?: (err: Error) => void,
+  onWarning?: (message: string | null, kind: "mic" | "tab_share") => void,
   options?: PcmStreamOptions
 ): Promise<PcmStreamHandle> {
   // Browsers require a secure context for mic + tab capture.
@@ -171,8 +172,15 @@ export async function startPcmToWebSocket(
   });
 
   let displayStream: MediaStream | null = null;
+  // Ending the call (stop(), below) also stops the shared tab's tracks, which
+  // fires the exact same "ended" event as the rep actually stopping the
+  // share mid-call — this flag is how the listener tells those two apart.
+  let intentionallyStopped = false;
+  // One-shot guard so a stopped share only ever reports once.
+  let tabShareEnded = false;
 
   const abort = (message: string): Error => {
+    intentionallyStopped = true;
     micStream.getTracks().forEach((t) => t.stop());
     displayStream?.getTracks().forEach((t) => t.stop());
     void audioCtx.close();
@@ -203,6 +211,21 @@ export async function startPcmToWebSocket(
       throw abort(
         'No tab audio. Pick the **Chrome tab** that has Meet/Zoom (not "Entire screen" unless you know it carries tab audio), and enable "Share tab audio".'
       );
+    }
+
+    // Closing the shared tab, or clicking Chrome's "Stop sharing" bar, ends
+    // this track — silently, with no exception anywhere in this pipeline.
+    // Without this listener the customer's channel just goes quiet for the
+    // rest of the call and nothing ever says why.
+    for (const track of displayStream.getAudioTracks()) {
+      track.addEventListener("ended", () => {
+        if (intentionallyStopped || tabShareEnded) return;
+        tabShareEnded = true;
+        onWarning?.(
+          "Tab/meeting audio sharing has stopped — the customer's audio is no longer being captured. End this call and start a new one to reshare.",
+          "tab_share"
+        );
+      });
     }
   }
 
@@ -259,24 +282,35 @@ export async function startPcmToWebSocket(
   });
   const mute = new GainNode(audioCtx, { gain: 0 });
 
-  // If the mic channel stays flat for ~5s of chunks, the graph is broken or the
-  // mic is muted — tell the rep instead of leaving an empty transcript.
+  // A quiet rep listening to the customer is normal and can easily produce many
+  // seconds of near-zero mic peak (noise suppression zeroes room tone) — that
+  // is NOT a broken mic, so this only warns after a long, sustained flat line
+  // (~30s), and it's advisory only: it never ends the call (see onWarning vs
+  // onError), and it clears itself the moment real signal comes back.
+  const SILENT_CHUNK_LIMIT = 700;
   let silentChunks = 0;
-  let silenceReported = false;
+  let warningActive = false;
 
   capture.port.onmessage = (ev: MessageEvent<{ mic: Float32Array; tab: Float32Array }>) => {
     if (ws.readyState !== WebSocket.OPEN) return;
     try {
-      if (!silenceReported) {
-        const peak = ev.data.mic.reduce((m, v) => Math.max(m, Math.abs(v)), 0);
-        silentChunks = peak < 0.001 ? silentChunks + 1 : 0;
-        if (silentChunks >= 120) {
-          silenceReported = true;
-          onError?.(
-            new Error(
-              "No microphone signal detected — check that the mic is not muted and the right input device is selected."
-            )
+      const peak = ev.data.mic.reduce((m, v) => Math.max(m, Math.abs(v)), 0);
+      if (peak < 0.001) {
+        silentChunks += 1;
+        if (!warningActive && silentChunks >= SILENT_CHUNK_LIMIT) {
+          warningActive = true;
+          onWarning?.(
+            "No microphone signal detected — check that the mic is not muted and the right input device is selected.",
+            "mic"
           );
+        }
+      } else {
+        silentChunks = 0;
+        if (warningActive) {
+          warningActive = false;
+          // If a higher-priority warning (tab-share/Deepgram) is showing,
+          // the reducer itself will refuse this clear — no need to check here.
+          onWarning?.(null, "mic");
         }
       }
       const mic = resampleLinear(ev.data.mic, audioCtx.sampleRate, TARGET_RATE);
@@ -305,6 +339,7 @@ export async function startPcmToWebSocket(
   audioCtx.addEventListener("statechange", resumeIfSuspended);
 
   const stop = () => {
+    intentionallyStopped = true;
     capture.port.onmessage = null;
     try {
       merger.disconnect();

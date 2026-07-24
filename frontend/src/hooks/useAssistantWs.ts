@@ -7,6 +7,7 @@ import {
 import type {
   SessionAction,
   SessionState,
+  WarningKind,
   WsMessage,
 } from "../types";
 
@@ -14,9 +15,20 @@ import type {
 
 const MAX_MESSAGES = 250;
 
+// Mirrors the order documented on WarningKind: higher wins. A lower-priority
+// source can never bump a still-active higher one off the banner, and can
+// only clear the banner if it's the one that put its own message there.
+const WARNING_PRIORITY: Record<WarningKind, number> = {
+  mic: 1,
+  deepgram: 2,
+  tab_share: 3,
+};
+
 const initialState: SessionState = {
   status: "idle",
   error: null,
+  warning: null,
+  warningKind: null,
   messages: [],
   sessionId: null,
   lastEndedSessionId: null,
@@ -51,6 +63,20 @@ function sessionReducer(state: SessionState, action: SessionAction): SessionStat
       };
     case "ERROR":
       return { ...state, status: "error", error: action.error };
+    case "WARNING": {
+      const { warning, kind } = action;
+      if (warning === null) {
+        // Only the source that's currently showing may clear it — otherwise
+        // a resolved mic-silence check could wipe out an unrelated, still-
+        // active "tab share stopped" or "Deepgram reconnecting" warning.
+        if (state.warningKind !== kind) return state;
+        return { ...state, warning: null, warningKind: null };
+      }
+      if (state.warningKind && WARNING_PRIORITY[state.warningKind] > WARNING_PRIORITY[kind]) {
+        return state;
+      }
+      return { ...state, warning, warningKind: kind };
+    }
     case "DISCONNECT":
       return {
         ...initialState,
@@ -106,6 +132,7 @@ export type ConnectOptions = PcmStreamOptions & {
 export interface AssistantWsApi {
   status: SessionState["status"];
   error: string | null;
+  warning: string | null;
   messages: WsMessage[];
   sessionId: string | null;
   lastEndedSessionId: string | null;
@@ -193,6 +220,16 @@ export function useAssistantWs(): AssistantWsApi {
             });
             return;
           }
+          if (t === "warning") {
+            const kind: WarningKind =
+              data.kind === "mic" || data.kind === "tab_share" ? data.kind : "deepgram";
+            dispatch({
+              type: "WARNING",
+              warning: typeof data.message === "string" ? data.message : null,
+              kind,
+            });
+            return;
+          }
           if (
             t === "transcript_partial" ||
             t === "transcript_final" ||
@@ -224,6 +261,7 @@ export function useAssistantWs(): AssistantWsApi {
         const { stop } = await startPcmToWebSocket(
           ws,
           (err) => dispatch({ type: "ERROR", error: err.message }),
+          (message, kind) => dispatch({ type: "WARNING", warning: message, kind }),
           { captureTabAudio: options?.captureTabAudio === true }
         );
         stopPcmRef.current = stop;
@@ -242,6 +280,7 @@ export function useAssistantWs(): AssistantWsApi {
   return {
     status: state.status,
     error: state.error,
+    warning: state.warning,
     messages: state.messages,
     sessionId: state.sessionId,
     lastEndedSessionId: state.lastEndedSessionId,

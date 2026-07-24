@@ -68,6 +68,27 @@ export interface ErrorMessage {
 }
 
 /**
+ * Three independent things can raise an advisory (mic silence, tab-share
+ * ending, Deepgram struggling to reconnect) but the UI has one banner slot —
+ * `kind` is how the reducer tells them apart so one can never silently swap
+ * out or clear a *different* one's still-active warning. Ordered here from
+ * least to most severe/permanent; the reducer uses this same order.
+ */
+export type WarningKind = "mic" | "deepgram" | "tab_share";
+
+/**
+ * Server push: an advisory condition that does NOT end the call (e.g. Deepgram
+ * is struggling to reconnect). `message: null` clears a previously-shown warning
+ * once the underlying issue recovers.
+ */
+export interface WarningMessage {
+  type: "warning";
+  message: string | null;
+  kind?: WarningKind;
+  session_id?: string;
+}
+
+/**
  * Server push: speaker channels heard so far and the lead (customer) channel.
  * Channel 0 = the rep's mic, channel 1 = shared meeting-tab audio.
  */
@@ -86,11 +107,16 @@ export type WsMessage =
   | AnswerDoneMessage
   | AnswerCancelledMessage
   | ErrorMessage
+  | WarningMessage
   | SessionStatusMessage;
 
 export interface SessionState {
   status: SessionStatus;
   error: string | null;
+  /** Advisory only (e.g. "mic looks silent") — unlike `error`, this never ends the call. */
+  warning: string | null;
+  /** Which source owns the currently-displayed `warning`, if any — see WarningKind. */
+  warningKind: WarningKind | null;
   messages: WsMessage[];
   sessionId: string | null;
   lastEndedSessionId: string | null;
@@ -108,4 +134,5 @@ export type SessionAction =
       payload: Pick<SessionStatusMessage, "speakers" | "lead_speaker_id">;
     }
   | { type: "ERROR"; error: string }
+  | { type: "WARNING"; warning: string | null; kind: WarningKind }
   | { type: "DISCONNECT" };

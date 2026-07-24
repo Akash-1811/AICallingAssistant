@@ -155,6 +155,26 @@
   font-size: 0.9rem;
 }
 
+/* Advisory only — the call is still fully live, so this stays visually
+   distinct from .errorMsg (which reads as something having gone wrong). */
+.micWarningBanner {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.65rem 1rem;
+  margin-top: 0.65rem;
+  background: var(--amber-bg);
+  border: 1px solid var(--amber-border);
+  border-radius: var(--r-lg);
+  color: var(--amber-text);
+}
+
+.micWarningBanner p {
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
 .postCallBanner p {
   margin: 0;
 }

@@ -122,6 +122,37 @@ class TestConversationManagerLeadOnlyScenarios:
 
         asyncio.run(scenario())
 
+    def test_rep_greeting_before_customer_speaks_is_not_mislabeled_as_lead(self) -> None:
+        """Regression test: on a real two-channel call, channel 1 is the lead
+        from the start — even before the customer has said anything — because
+        the channel assignment is fixed by the capture setup, not inferred from
+        who has spoken so far. A rep's opening turn (channel 0 only, customer
+        hasn't replied yet) must never be mistaken for the customer."""
+        import asyncio
+
+        from app.live.conversation_manager import (
+            ConversationManager,
+        )
+        from app.live.transcript_types import TranscriptSegment
+
+        async def scenario():
+            cm = ConversationManager()
+            sid = await cm.create_session(audio_channels=2)
+            _, _, speakers, lead = await cm.record_turn(
+                sid,
+                [
+                    TranscriptSegment(
+                        text="Hello, thanks for calling in today, how can I help?",
+                        speaker=0,
+                    ),
+                ],
+            )
+            assert speakers == [0]
+            assert lead == 1
+            await cm.close()
+
+        asyncio.run(scenario())
+
     def test_rep_talk_between_customer_turns_does_not_pollute_query(self) -> None:
         """Rep (channel 0) filler between customer questions must not appear
         in the retrieval query."""
@@ -157,7 +188,12 @@ class TestConversationManagerLeadOnlyScenarios:
         asyncio.run(scenario())
 
     def test_mic_only_session_treats_single_channel_as_lead(self) -> None:
-        """No tab share (demo / phone on speaker) → the lone mic channel is the lead."""
+        """A session explicitly started with one channel (no tab share possible —
+        e.g. a phone held on speaker) has no way to tell speakers apart, so the
+        lone channel is treated as the lead. This must be declared up front via
+        audio_channels=1 — a real two-channel call must never infer "mic-only"
+        just because the customer hasn't spoken yet (that previously mislabeled
+        the rep's own opening greeting as the customer's speech)."""
         import asyncio
 
         from app.live.conversation_manager import (
@@ -167,7 +203,7 @@ class TestConversationManagerLeadOnlyScenarios:
 
         async def scenario():
             cm = ConversationManager()
-            sid = await cm.create_session()
+            sid = await cm.create_session(audio_channels=1)
             _, fq, speakers, lead = await cm.record_turn(
                 sid,
                 [

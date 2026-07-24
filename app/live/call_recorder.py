@@ -52,6 +52,21 @@ def speaker_role(speaker_id: int, lead_speaker_id: int | None) -> str:
     return "prospect" if speaker_id == lead_speaker_id else "rep"
 
 
+def resolve_lead_speaker_id(row: Conversation) -> int | None:
+    """
+    The conversation row's `lead_speaker_id` is set from a `session_status`
+    event processed on a separate queue from `transcript_final` — so for the
+    very first segment of every call, it can still be unset even though we
+    already know the answer: channel 1 is the customer on any real two-channel
+    call, no need to wait on anything. Only fall back to "not yet known" for a
+    genuinely single-channel call, where there truly is nothing to resolve
+    until we've heard the one channel that exists.
+    """
+    if row.lead_speaker_id is not None:
+        return row.lead_speaker_id
+    return 1 if row.audio_channels >= 2 else None
+
+
 class OutboundQueue(Protocol):
     """Anything that can receive WebSocket payloads (client queue or recording wrapper)."""
 
@@ -265,7 +280,7 @@ async def save_transcript_segment(conversation_id: str, event: dict[str, Any]) -
             TranscriptSegmentRow(
                 conversation_id=conversation_id,
                 speaker_id=speaker_id,
-                role=speaker_role(speaker_id, row.lead_speaker_id),
+                role=speaker_role(speaker_id, resolve_lead_speaker_id(row)),
                 start_ms=parse_optional_int(event.get("start_ms")),
                 end_ms=parse_optional_int(event.get("end_ms")),
                 text=text,

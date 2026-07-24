@@ -58,6 +58,7 @@ export function LiveCallsPage() {
   const {
     status,
     error,
+    warning,
     messages,
     elapsedSeconds,
     connect,
@@ -300,6 +301,13 @@ export function LiveCallsPage() {
               )}
             </div>
           </div>
+
+          {isLive && warning ? (
+            <div className={styles.micWarningBanner} role="status">
+              <MicOffIcon aria-hidden="true" />
+              <p>{warning}</p>
+            </div>
+          ) : null}
 
           {!isLive && lastEndedSessionId ? (
             <div className={styles.postCallBanner}>
@@ -727,6 +735,19 @@ function MicIcon() {
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="M12 2a3 3 0 0 1 3 3v7a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z" />
       <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+      <line x1="12" y1="19" x2="12" y2="22" />
+    </svg>
+  );
+}
+
+function MicOffIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <line x1="2" y1="2" x2="22" y2="22" />
+      <path d="M18.89 13.23A7.12 7.12 0 0 0 19 12v-2" />
+      <path d="M5 10v2a7 7 0 0 0 12 5" />
+      <path d="M15 9.34V5a3 3 0 0 0-5.94-.6" />
+      <path d="M9 9v3a3 3 0 0 0 5.12 2.12" />
       <line x1="12" y1="19" x2="12" y2="22" />
     </svg>
   );

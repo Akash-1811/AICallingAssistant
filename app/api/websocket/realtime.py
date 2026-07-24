@@ -122,7 +122,9 @@ async def realtime_assistant(websocket: WebSocket):
     _active_sessions[owner] += 1
 
     # Audio is always interleaved stereo: channel 0 = rep mic, channel 1 = tab audio.
-    session_id = await conversation_manager.create_session(call_language=call_language)
+    session_id = await conversation_manager.create_session(
+        call_language=call_language, audio_channels=2
+    )
     rep_label = await get_rep_display_name(owner)
     await start_conversation(
         session_id, audio_channels=2, call_language=call_language, rep_label=rep_label
